@@ -1,6 +1,6 @@
-# Storyboard Generator
+# Diffusion Lab
 
-A Python application that transforms short scripts or ideas into 5-panel storyboards using Stable Diffusion and AI-generated captions.
+A Python application and creative toolkit for generating storyboards, single-image art, and more using Stable Diffusion and AI-powered features.
 
 ## Features
 
@@ -14,8 +14,8 @@ A Python application that transforms short scripts or ideas into 5-panel storybo
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository-url>
-   cd storyboard-generator
+   git clone https://github.com/arun-gupta/diffusion-lab.git
+   cd diffusion-lab
    ```
 
 2. **Create a virtual environment**:
