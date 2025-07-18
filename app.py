@@ -78,6 +78,9 @@ def generate_caption(scene_description):
     device = get_optimal_device()
     if device != "cpu":
         inputs = {k: v.to(device) for k, v in inputs.items()}
+    # Ensure pad_token is set to eos_token if missing
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
     with torch.no_grad():
         outputs = model.generate(
             **inputs,

@@ -6,7 +6,7 @@ Configuration file for Storyboard Generator
 MODEL_CONFIG = {
     "diffusion_model": "stabilityai/stable-diffusion-xl-base-1.0",
     "text_model": "stabilityai/stablelm-3b-4e1t",
-    "torch_dtype": "float16",
+    "torch_dtype": "float32",
     "use_safetensors": True,
     "variant": "fp16"
 }
