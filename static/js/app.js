@@ -31,12 +31,19 @@ class StoryboardGenerator {
             this.updateModeLabel();
         });
 
+        // Mode selector
+        document.getElementById('generationMode').addEventListener('change', () => {
+            this.updateModeUI();
+        });
+
         // Example prompts
         document.querySelectorAll('.example-prompt').forEach(button => {
             button.addEventListener('click', (e) => {
                 const prompt = e.target.dataset.prompt;
                 document.getElementById('prompt').value = prompt;
                 this.updateStatus('Example prompt loaded', 'info');
+                // Optionally scroll to the form or focus the prompt field
+                document.getElementById('prompt').focus();
             });
         });
 
@@ -71,7 +78,21 @@ class StoryboardGenerator {
         }
     }
 
+    updateModeUI() {
+        const mode = this.getCurrentMode();
+        if (mode === 'single') {
+            document.getElementById('captionsCard').classList.add('d-none');
+            document.getElementById('singleImageContainer').classList.remove('d-none');
+            document.getElementById('storyboardContainer').classList.add('d-none');
+        } else {
+            document.getElementById('captionsCard').classList.add('d-none');
+            document.getElementById('singleImageContainer').classList.add('d-none');
+            document.getElementById('storyboardContainer').classList.remove('d-none');
+        }
+    }
+
     getCurrentMode() {
+        // Return 'ai' if switch is checked, else 'demo'
         return document.getElementById('modeSwitch').checked ? 'ai' : 'demo';
     }
 
@@ -79,6 +100,7 @@ class StoryboardGenerator {
         const prompt = document.getElementById('prompt').value.trim();
         const style = document.getElementById('style').value;
         const mode = this.getCurrentMode();
+        const genType = document.getElementById('generationMode').value;
 
         // Validation
         if (!prompt) {
@@ -109,7 +131,8 @@ class StoryboardGenerator {
                 body: JSON.stringify({
                     prompt: prompt,
                     style: style,
-                    mode: mode
+                    mode: mode,
+                    genType: genType
                 })
             });
 
@@ -122,10 +145,14 @@ class StoryboardGenerator {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                this.displayStoryboard(data);
-                this.updateStatus('Storyboard generated successfully!', 'success');
+                if (mode === 'single') {
+                    this.displaySingleImage(data);
+                } else {
+                    this.displayStoryboard(data);
+                }
+                this.updateStatus('Generation successful!', 'success');
             } else {
-                this.updateStatus(data.error || 'Failed to generate storyboard', 'error');
+                this.updateStatus(data.error || 'Failed to generate', 'error');
             }
         } catch (error) {
             if (mode === 'ai' && this._aiCancelled) {
@@ -181,6 +208,22 @@ class StoryboardGenerator {
         container.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
+    displaySingleImage(data) {
+        // Ensure correct container visibility
+        document.getElementById('singleImageContainer').classList.remove('d-none');
+        document.getElementById('storyboardContainer').classList.add('d-none');
+        const container = document.getElementById('singleImageContainer');
+        const downloadSection = document.getElementById('downloadSection');
+        container.innerHTML = `
+            <img src="data:image/png;base64,${data.image}" 
+                 alt="Generated Art" 
+                 class="storyboard-image">
+        `;
+        downloadSection.classList.remove('d-none');
+        this.currentFilename = data.filename;
+        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     async downloadStoryboard() {
         if (!this.currentFilename) {
             this.updateStatus('No storyboard to download', 'error');
@@ -227,7 +270,7 @@ class StoryboardGenerator {
         const progressBar = document.getElementById('progressBar');
         
         generateBtn.disabled = false;
-        generateBtn.innerHTML = '<i class="fas fa-magic"></i> Generate Storyboard';
+        generateBtn.innerHTML = '<i class="fas fa-magic"></i> Generate';
         
         progressBar.classList.add('d-none');
         progressBar.querySelector('.progress-bar').style.width = '0%';
@@ -325,11 +368,21 @@ class StoryboardGenerator {
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.storyboardApp = new StoryboardGenerator();
-    
+    // Event delegation for example prompts
+    const listGroup = document.querySelector('.list-group');
+    if (listGroup) {
+        listGroup.addEventListener('click', function(e) {
+            if (e.target.classList.contains('example-prompt')) {
+                const prompt = e.target.dataset.prompt;
+                document.getElementById('prompt').value = prompt;
+                window.storyboardApp.updateStatus('Example prompt loaded', 'info');
+                document.getElementById('prompt').focus();
+            }
+        });
+    }
     // Add some nice animations
     document.querySelectorAll('.card').forEach((card, index) => {
         card.style.animationDelay = `${index * 0.1}s`;
-        card.classList.add('animate__animated', 'animate__fadeInUp');
     });
 });
 

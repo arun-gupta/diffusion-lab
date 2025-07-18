@@ -48,6 +48,7 @@
                                 <div class="form-text" id="styleDescription">Professional film-style with dramatic lighting</div>
                             </div>
 
+                            <!-- Add Demo/AI Mode Switch -->
                             <div class="mb-3">
                                 <label for="modeSwitch" class="form-label">Generation Mode:</label>
                                 <div class="form-check form-switch">
@@ -57,13 +58,20 @@
                                 <div class="form-text" id="modeDescription">
                                     Demo mode is fast and uses placeholder images. Switch to Full AI for real AI-generated art (slower).
                                 </div>
-                                <div class="alert alert-warning mt-2 mb-0 py-2 px-3" id="demoModeNote" style="font-size:0.95em;">
-                                    <strong>Note:</strong> Demo mode is for UI testing only and does <u>not</u> generate real images. Use Full AI mode for real art.
-                                </div>
+                            </div>
+
+                            <!-- Add Mode Selector -->
+                            <div class="mb-3">
+                                <label for="generationMode" class="form-label">Generation Type:</label>
+                                <select class="form-select" id="generationMode">
+                                    <option value="storyboard">Storyboard (5 panels)</option>
+                                    <option value="single">Single-Image Art</option>
+                                </select>
+                                <div class="form-text">Choose to generate a storyboard or a single piece of art.</div>
                             </div>
 
                             <button type="submit" class="btn btn-primary btn-lg w-100" id="generateBtn">
-                                <i class="fas fa-magic"></i> Generate Storyboard
+                                <i class="fas fa-magic"></i> Generate
                             </button>
                         </form>
 
@@ -111,7 +119,7 @@
             <div class="col-lg-8 col-md-7">
                 <div class="card shadow-sm mt-4">
                     <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                        <h5><i class="fas fa-images"></i> Generated Storyboard</h5>
+                        <h5><i class="fas fa-images"></i> Generated Output</h5>
                         <div id="downloadSection" class="d-none">
                             <button class="btn btn-light btn-sm" id="downloadBtn">
                                 <i class="fas fa-download"></i> Download PNG
@@ -122,14 +130,16 @@
                         <div id="storyboardContainer" class="text-center">
                             <div class="placeholder-content">
                                 <i class="fas fa-image fa-4x text-muted mb-3"></i>
-                                <h5 class="text-muted">Your storyboard will appear here</h5>
-                                <p class="text-muted">Enter a scene description and choose a style to get started</p>
+                                <h5 class="text-muted">Your output will appear here</h5>
+                                <p class="text-muted">Enter a prompt and choose a mode to get started</p>
                             </div>
+                        </div>
+                        <div id="singleImageContainer" class="text-center d-none">
+                            <!-- Single image will be inserted here -->
                         </div>
                     </div>
                 </div>
-
-                <!-- Captions Panel -->
+                <!-- Captions Panel (Storyboard only) -->
                 <div class="card shadow-sm mt-3 d-none" id="captionsCard">
                     <div class="card-header bg-warning text-dark">
                         <h6><i class="fas fa-comments"></i> Panel Descriptions</h6>

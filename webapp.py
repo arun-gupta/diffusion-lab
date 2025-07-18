@@ -147,26 +147,22 @@ def index():
 
 @app.route('/generate', methods=['POST'])
 def generate_storyboard():
-    """Generate storyboard endpoint"""
     try:
         data = request.get_json()
         prompt = data.get('prompt', '').strip()
         style = data.get('style', 'cinematic')
         mode = data.get('mode', 'demo')
-        print(f"[DEBUG] /generate called with mode={mode}, style={style}, prompt={prompt[:40]}")
-        
+        gen_type = data.get('genType', 'storyboard')
+        print(f"[DEBUG] /generate called with mode={mode}, genType={gen_type}, style={style}, prompt={prompt[:40]}")
         if not prompt:
             print("[DEBUG] No prompt provided.")
             return jsonify({'error': 'Please enter a scene description'}), 400
-        
         if len(prompt) < 10:
             print("[DEBUG] Prompt too short.")
             return jsonify({'error': 'Scene description should be at least 10 characters'}), 400
-        
         if style not in STYLES:
             print(f"[DEBUG] Invalid style '{style}', defaulting to cinematic.")
             style = 'cinematic'
-        
         if mode == 'ai':
             print("[DEBUG] Entering Full AI mode.")
             try:
@@ -175,13 +171,12 @@ def generate_storyboard():
             except ImportError as e:
                 print(f"[DEBUG] ImportError in AI mode: {e}")
                 return jsonify({'error': 'AI mode is not available. Please ensure app.py and dependencies are present.'}), 500
-            scene_variations = generate_scene_variations(prompt, style)
-            images = []
-            captions = []
-            style_preset = STYLE_PRESETS.get(style, STYLE_PRESETS["cinematic"])
-            negative_prompt = style_preset["negative_prompt"]
-            for i, scene in enumerate(scene_variations):
-                print(f"[DEBUG] Generating AI image {i+1}/5 for: {scene[:60]}")
+            if gen_type == 'single':
+                print("[DEBUG] AI Single-Image Art mode.")
+                # Generate a single AI image
+                scene = prompt
+                style_preset = STYLE_PRESETS.get(style, STYLE_PRESETS["cinematic"])
+                negative_prompt = style_preset["negative_prompt"]
                 image = pipe(
                     scene,
                     negative_prompt=negative_prompt,
@@ -191,40 +186,107 @@ def generate_storyboard():
                     height=IMAGE_CONFIG["height"]
                 ).images[0]
                 caption = generate_caption(scene)
-                images.append(image)
-                captions.append(caption)
-            storyboard = create_storyboard_layout(images, captions)
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"single_art_{timestamp}.png"
+                filepath = os.path.join('static/storyboards', filename)
+                image.save(filepath)
+                buffer = io.BytesIO()
+                image.save(buffer, format='PNG')
+                buffer.seek(0)
+                img_base64 = base64.b64encode(buffer.getvalue()).decode()
+                return jsonify({
+                    'success': True,
+                    'image': img_base64,
+                    'filename': filename,
+                    'caption': caption,
+                    'prompt': prompt,
+                    'style': style,
+                    'mode': mode
+                })
+            else:
+                print("[DEBUG] AI Storyboard mode.")
+                scene_variations = generate_scene_variations(prompt, style)
+                images = []
+                captions = []
+                style_preset = STYLE_PRESETS.get(style, STYLE_PRESETS["cinematic"])
+                negative_prompt = style_preset["negative_prompt"]
+                for i, scene in enumerate(scene_variations):
+                    print(f"[DEBUG] Generating AI image {i+1}/5 for: {scene[:60]}")
+                    image = pipe(
+                        scene,
+                        negative_prompt=negative_prompt,
+                        num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
+                        guidance_scale=IMAGE_CONFIG["guidance_scale"],
+                        width=IMAGE_CONFIG["width"],
+                        height=IMAGE_CONFIG["height"]
+                    ).images[0]
+                    caption = generate_caption(scene)
+                    images.append(image)
+                    captions.append(caption)
+                storyboard = create_storyboard_layout(images, captions)
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"storyboard_{timestamp}.png"
+                filepath = os.path.join('static/storyboards', filename)
+                storyboard.save(filepath)
+                buffer = io.BytesIO()
+                storyboard.save(buffer, format='PNG')
+                buffer.seek(0)
+                img_base64 = base64.b64encode(buffer.getvalue()).decode()
+                return jsonify({
+                    'success': True,
+                    'image': img_base64,
+                    'filename': filename,
+                    'captions': captions,
+                    'prompt': prompt,
+                    'style': style,
+                    'mode': mode
+                })
         else:
             print("[DEBUG] Entering Demo mode.")
-            storyboard, captions = generate_demo_storyboard(prompt, style)
-        
-        # Save storyboard
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"storyboard_{timestamp}.png"
-        filepath = os.path.join('static/storyboards', filename)
-        storyboard.save(filepath)
-        print(f"[DEBUG] Storyboard saved to {filepath}")
-        
-        # Convert to base64 for immediate display
-        buffer = io.BytesIO()
-        storyboard.save(buffer, format='PNG')
-        buffer.seek(0)
-        img_base64 = base64.b64encode(buffer.getvalue()).decode()
-        print(f"[DEBUG] Returning response for mode={mode}")
-        
-        return jsonify({
-            'success': True,
-            'image': img_base64,
-            'filename': filename,
-            'captions': captions,
-            'prompt': prompt,
-            'style': style,
-            'mode': mode
-        })
-        
+            if gen_type == 'single':
+                print("[DEBUG] Demo Single-Image Art mode.")
+                image = create_demo_image(prompt, style, 1)
+                caption = f"Art: {prompt[:30]}..."
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"single_art_{timestamp}.png"
+                filepath = os.path.join('static/storyboards', filename)
+                image.save(filepath)
+                buffer = io.BytesIO()
+                image.save(buffer, format='PNG')
+                buffer.seek(0)
+                img_base64 = base64.b64encode(buffer.getvalue()).decode()
+                return jsonify({
+                    'success': True,
+                    'image': img_base64,
+                    'filename': filename,
+                    'caption': caption,
+                    'prompt': prompt,
+                    'style': style,
+                    'mode': mode
+                })
+            else:
+                print("[DEBUG] Demo Storyboard mode.")
+                storyboard, captions = generate_demo_storyboard(prompt, style)
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"storyboard_{timestamp}.png"
+                filepath = os.path.join('static/storyboards', filename)
+                storyboard.save(filepath)
+                buffer = io.BytesIO()
+                storyboard.save(buffer, format='PNG')
+                buffer.seek(0)
+                img_base64 = base64.b64encode(buffer.getvalue()).decode()
+                return jsonify({
+                    'success': True,
+                    'image': img_base64,
+                    'filename': filename,
+                    'captions': captions,
+                    'prompt': prompt,
+                    'style': style,
+                    'mode': mode
+                })
     except Exception as e:
         print(f"[DEBUG] Exception in /generate: {e}")
-        return jsonify({'error': f'Error generating storyboard: {str(e)}'}), 500
+        return jsonify({'error': f'Error generating: {str(e)}'}), 500
 
 @app.route('/download/<filename>')
 def download_storyboard(filename):

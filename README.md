@@ -4,11 +4,11 @@ A Python application that transforms short scripts or ideas into 5-panel storybo
 
 ## Features
 
-- **Input**: Single prompt (1-2 sentences describing a scene)
-- **Output**: 5 generated images representing different moments of the scene
-- **AI Captions**: Each image comes with a descriptive caption
+- **Storyboard Mode**: Input a scene description and generate a 5-panel storyboard with AI-generated images and captions.
+- **Single-Image Art Mode**: Input a prompt and generate a single, high-quality AI image in your chosen style.
 - **Style Options**: Choose from different visual styles (cinematic, anime, noir, etc.)
 - **Export**: Save storyboards as PDF or images
+- **Demo/AI Mode Toggle**: Choose between fast demo mode (placeholder images) and full AI mode (real Stable Diffusion/StableLM generation) using the toggle above the generation type selector.
 
 ## Installation
 
@@ -52,11 +52,14 @@ A Python application that transforms short scripts or ideas into 5-panel storybo
 
 ### Web Application (Recommended)
 1. Open your browser and go to `http://localhost:5001`
-2. Enter your scene description in the text box
-3. Choose your preferred style from the dropdown
-4. Click "Generate Storyboard"
-5. Watch the progress bar as your storyboard is created
-6. Download the PNG file or view the results
+2. Select either **Storyboard** or **Single-Image Art** mode
+3. Use the Demo/AI toggle to choose between fast demo mode and full AI mode
+4. Enter your scene description or art prompt in the text box
+5. Choose your preferred style from the dropdown
+6. Click "Generate"
+7. Download the PNG file or view the results
+
+**Note:** Generated images are saved locally in the `static/storyboards/` directory.
 
 ### Gradio Interface
 1. Open your browser and go to `http://localhost:7860`
@@ -96,3 +99,21 @@ A Python application that transforms short scripts or ideas into 5-panel storybo
 ## License
 
 This project is licensed under the Apache License 2.0 - see the LICENSE file for details. 
+
+## Planned Features
+
+- **Image-to-Image (img2img):** Transform sketches, photos, or rough concepts into polished art.
+- **Inpainting (Content-aware Fill):** Remove or replace parts of an image by masking them and describing what should go there.
+- **Outpainting (Image Expansion):** Extend the borders of an image with new, contextually appropriate content.
+- **Style Transfer:** Apply the style of one image (e.g., a famous painting) to another image.
+- **Prompt Chaining / Story Evolution:** Generate a sequence of images that evolve based on a series of prompts.
+- **Batch Generation & Variations:** Generate multiple variations for a single prompt to explore creative diversity.
+- **Animated Diffusion (Frame Interpolation):** Create short animations by generating frames that morph between prompts or images.
+- **DreamBooth / Custom Subject Training:** Fine-tune Stable Diffusion on a small set of images of a person, pet, or object, so you can generate that subject in any context.
+- **Text-Guided Image Editing:** Edit an existing image by describing the change in text.
+- **Super-Resolution / Image Enhancement:** Upscale low-resolution images or enhance details using diffusion-based super-resolution models.
+- **AI Avatars and Profile Pictures:** Generate unique avatars or profile pictures in various styles from a photo or prompt.
+- **AI Art Gallery / Curation:** Curate and display the best generations, or let users vote on their favorites.
+- **API Playground:** Let users experiment with all Stable Diffusion parameters (guidance scale, steps, seed, etc.).
+- **Prompt Engineering Tools:** Help users craft better prompts with suggestions, negative prompts, and prompt templates.
+- **Model Comparison:** Let users compare outputs from different Stable Diffusion checkpoints or custom models. 
