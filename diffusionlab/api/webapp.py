@@ -3,16 +3,22 @@
 Flask Web Application for Storyboard Generator
 """
 
+import os
 from flask import Flask, render_template, request, jsonify, send_file
 from PIL import Image, ImageDraw, ImageFont
-import os
 import time
 import io
 import base64
 from datetime import datetime
 import json
 
-app = Flask(__name__)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, 'diffusionlab', 'templates'),
+    static_folder=os.path.join(BASE_DIR, 'diffusionlab', 'static'),
+    static_url_path='/static'
+)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -166,11 +172,10 @@ def generate_storyboard():
         if mode == 'ai':
             print("[DEBUG] Entering Full AI mode.")
             try:
-                from app import generate_scene_variations, generate_caption
-                from app import pipe, STYLE_PRESETS, IMAGE_CONFIG
+                from diffusionlab.tasks.storyboard import generate_scene_variations, generate_caption, pipe, STYLE_PRESETS, IMAGE_CONFIG
             except ImportError as e:
                 print(f"[DEBUG] ImportError in AI mode: {e}")
-                return jsonify({'error': 'AI mode is not available. Please ensure app.py and dependencies are present.'}), 500
+                return jsonify({'error': 'AI mode is not available. Please ensure diffusionlab/tasks/storyboard.py and dependencies are present.'}), 500
             if gen_type == 'single':
                 print("[DEBUG] AI Single-Image Art mode.")
                 # Generate a single AI image

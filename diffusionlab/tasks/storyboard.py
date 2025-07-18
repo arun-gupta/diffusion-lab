@@ -11,8 +11,8 @@ from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.utils import ImageReader
 import io
 import time
-from config import *
-from utils import *
+from diffusionlab.config import *
+from diffusionlab.utils import *
 
 # --- Model and Pipeline Setup (Top Level) ---
 pipe = None

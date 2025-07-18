@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Storyboard Generator</title>
+    <title>Diffusion Lab</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
@@ -12,8 +12,8 @@
     <div class="container-fluid">
         <!-- Header -->
         <header class="text-center py-4 bg-dark text-white">
-            <h1><i class="fas fa-film"></i> Storyboard Generator</h1>
-            <p class="lead">Transform your script ideas into visual storyboards using AI</p>
+            <h1><i class="fas fa-flask"></i> Diffusion Lab</h1>
+            <p class="lead">Create storyboards, art, and more with AI-powered diffusion models</p>
         </header>
 
         <div class="row">
@@ -25,6 +25,16 @@
                     </div>
                     <div class="card-body">
                         <form id="storyboardForm">
+                            <!-- Add Mode Selector (Generation Type) at the top -->
+                            <div class="mb-3">
+                                <label for="generationMode" class="form-label">Generation Type:</label>
+                                <select class="form-select" id="generationMode">
+                                    <option value="storyboard">Storyboard (5 panels)</option>
+                                    <option value="single">Single-Image Art</option>
+                                </select>
+                                <div class="form-text">Choose to generate a storyboard or a single piece of art.</div>
+                            </div>
+
                             <div class="mb-3">
                                 <label for="prompt" class="form-label">Describe your scene:</label>
                                 <textarea 
@@ -58,16 +68,6 @@
                                 <div class="form-text" id="modeDescription">
                                     Demo mode is fast and uses placeholder images. Switch to Full AI for real AI-generated art (slower).
                                 </div>
-                            </div>
-
-                            <!-- Add Mode Selector -->
-                            <div class="mb-3">
-                                <label for="generationMode" class="form-label">Generation Type:</label>
-                                <select class="form-select" id="generationMode">
-                                    <option value="storyboard">Storyboard (5 panels)</option>
-                                    <option value="single">Single-Image Art</option>
-                                </select>
-                                <div class="form-text">Choose to generate a storyboard or a single piece of art.</div>
                             </div>
 
                             <button type="submit" class="btn btn-primary btn-lg w-100" id="generateBtn">

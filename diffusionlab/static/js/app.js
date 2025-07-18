@@ -384,6 +384,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.card').forEach((card, index) => {
         card.style.animationDelay = `${index * 0.1}s`;
     });
+    // Accessibility: Move focus to Generate button when AI modal is hidden or about to be hidden
+    const aiModal = document.getElementById('aiLoadingModal');
+    if (aiModal) {
+        aiModal.addEventListener('hide.bs.modal', function () {
+            const generateBtn = document.getElementById('generateBtn');
+            if (generateBtn) generateBtn.focus();
+        });
+        aiModal.addEventListener('hidden.bs.modal', function () {
+            const generateBtn = document.getElementById('generateBtn');
+            if (generateBtn) generateBtn.focus();
+        });
+    }
 });
 
 // Add CSS for animations if not already present
