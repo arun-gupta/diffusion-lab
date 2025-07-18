@@ -96,24 +96,24 @@ A Python application that transforms short scripts or ideas into 5-panel storybo
 - 8GB+ RAM
 - Internet connection for model downloads
 
+## Planned Features
+
+- **1. Image-to-Image (img2img):** Transform sketches, photos, or rough concepts into polished art.
+- **2. Inpainting (Content-aware Fill):** Remove or replace parts of an image by masking them and describing what should go there.
+- **3. Outpainting (Image Expansion):** Extend the borders of an image with new, contextually appropriate content.
+- **4. Style Transfer:** Apply the style of one image (e.g., a famous painting) to another image.
+- **5. Prompt Chaining / Story Evolution:** Generate a sequence of images that evolve based on a series of prompts.
+- **6. Batch Generation & Variations:** Generate multiple variations for a single prompt to explore creative diversity.
+- **7. Animated Diffusion (Frame Interpolation):** Create short animations by generating frames that morph between prompts or images.
+- **8. DreamBooth / Custom Subject Training:** Fine-tune Stable Diffusion on a small set of images of a person, pet, or object, so you can generate that subject in any context.
+- **9. Text-Guided Image Editing:** Edit an existing image by describing the change in text.
+- **10. Super-Resolution / Image Enhancement:** Upscale low-resolution images or enhance details using diffusion-based super-resolution models.
+- **11. AI Avatars and Profile Pictures:** Generate unique avatars or profile pictures in various styles from a photo or prompt.
+- **12. AI Art Gallery / Curation:** Curate and display the best generations, or let users vote on their favorites.
+- **13. API Playground:** Let users experiment with all Stable Diffusion parameters (guidance scale, steps, seed, etc.).
+- **14. Prompt Engineering Tools:** Help users craft better prompts with suggestions, negative prompts, and prompt templates.
+- **15. Model Comparison:** Let users compare outputs from different Stable Diffusion checkpoints or custom models.
+
 ## License
 
 This project is licensed under the Apache License 2.0 - see the LICENSE file for details. 
-
-## Planned Features
-
-- **Image-to-Image (img2img):** Transform sketches, photos, or rough concepts into polished art.
-- **Inpainting (Content-aware Fill):** Remove or replace parts of an image by masking them and describing what should go there.
-- **Outpainting (Image Expansion):** Extend the borders of an image with new, contextually appropriate content.
-- **Style Transfer:** Apply the style of one image (e.g., a famous painting) to another image.
-- **Prompt Chaining / Story Evolution:** Generate a sequence of images that evolve based on a series of prompts.
-- **Batch Generation & Variations:** Generate multiple variations for a single prompt to explore creative diversity.
-- **Animated Diffusion (Frame Interpolation):** Create short animations by generating frames that morph between prompts or images.
-- **DreamBooth / Custom Subject Training:** Fine-tune Stable Diffusion on a small set of images of a person, pet, or object, so you can generate that subject in any context.
-- **Text-Guided Image Editing:** Edit an existing image by describing the change in text.
-- **Super-Resolution / Image Enhancement:** Upscale low-resolution images or enhance details using diffusion-based super-resolution models.
-- **AI Avatars and Profile Pictures:** Generate unique avatars or profile pictures in various styles from a photo or prompt.
-- **AI Art Gallery / Curation:** Curate and display the best generations, or let users vote on their favorites.
-- **API Playground:** Let users experiment with all Stable Diffusion parameters (guidance scale, steps, seed, etc.).
-- **Prompt Engineering Tools:** Help users craft better prompts with suggestions, negative prompts, and prompt templates.
-- **Model Comparison:** Let users compare outputs from different Stable Diffusion checkpoints or custom models. 
