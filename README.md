@@ -58,13 +58,13 @@ A Python application and creative toolkit for generating storyboards, single-ima
 
    **Option B: Gradio Interface**
    ```bash
-   python diffusionlab/tasks/storyboard.py
+   python3 -m diffusionlab.tasks.storyboard
    # Then open http://localhost:7860 in your browser
    ```
 
    **Option C: Demo Version**
    ```bash
-   python diffusionlab/tasks/demo.py
+   python3 -m diffusionlab.tasks.demo
    ```
 
 ## Quick Start Example
