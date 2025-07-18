@@ -3,6 +3,8 @@
 class StoryboardGenerator {
     constructor() {
         this.currentFilename = null;
+        this._aiModal = null;
+        this._aiCancelled = false;
         this.init();
     }
 
@@ -41,6 +43,11 @@ class StoryboardGenerator {
         // Download button
         document.getElementById('downloadBtn').addEventListener('click', () => {
             this.downloadStoryboard();
+        });
+
+        // Cancel AI modal
+        document.getElementById('aiCancelBtn').addEventListener('click', () => {
+            this.cancelAiGeneration();
         });
     }
 
@@ -86,6 +93,7 @@ class StoryboardGenerator {
 
         // Show loading state
         if (mode === 'ai') {
+            this._aiCancelled = false;
             this.showAiLoadingModal();
         } else {
             this.showLoading();
@@ -105,6 +113,12 @@ class StoryboardGenerator {
                 })
             });
 
+            // If cancelled, ignore the result
+            if (mode === 'ai' && this._aiCancelled) {
+                this.updateStatus('AI generation cancelled.', 'info');
+                return;
+            }
+
             const data = await response.json();
 
             if (response.ok && data.success) {
@@ -114,6 +128,10 @@ class StoryboardGenerator {
                 this.updateStatus(data.error || 'Failed to generate storyboard', 'error');
             }
         } catch (error) {
+            if (mode === 'ai' && this._aiCancelled) {
+                this.updateStatus('AI generation cancelled.', 'info');
+                return;
+            }
             console.error('Error:', error);
             this.updateStatus('Network error. Please try again.', 'error');
         } finally {
@@ -295,6 +313,12 @@ class StoryboardGenerator {
             this._aiModal.hide();
             this._aiModal = null;
         }
+    }
+
+    cancelAiGeneration() {
+        this._aiCancelled = true;
+        this.hideAiLoadingModal();
+        this.updateStatus('AI generation cancelled.', 'info');
     }
 }
 

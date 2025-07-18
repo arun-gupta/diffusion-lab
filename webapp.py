@@ -153,30 +153,35 @@ def generate_storyboard():
         prompt = data.get('prompt', '').strip()
         style = data.get('style', 'cinematic')
         mode = data.get('mode', 'demo')
+        print(f"[DEBUG] /generate called with mode={mode}, style={style}, prompt={prompt[:40]}")
         
         if not prompt:
+            print("[DEBUG] No prompt provided.")
             return jsonify({'error': 'Please enter a scene description'}), 400
         
         if len(prompt) < 10:
+            print("[DEBUG] Prompt too short.")
             return jsonify({'error': 'Scene description should be at least 10 characters'}), 400
         
         if style not in STYLES:
+            print(f"[DEBUG] Invalid style '{style}', defaulting to cinematic.")
             style = 'cinematic'
         
         if mode == 'ai':
-            # --- Full AI Mode ---
+            print("[DEBUG] Entering Full AI mode.")
             try:
                 from app import generate_scene_variations, generate_caption
                 from app import pipe, STYLE_PRESETS, IMAGE_CONFIG
-            except ImportError:
+            except ImportError as e:
+                print(f"[DEBUG] ImportError in AI mode: {e}")
                 return jsonify({'error': 'AI mode is not available. Please ensure app.py and dependencies are present.'}), 500
-            # Generate scene variations
             scene_variations = generate_scene_variations(prompt, style)
             images = []
             captions = []
             style_preset = STYLE_PRESETS.get(style, STYLE_PRESETS["cinematic"])
             negative_prompt = style_preset["negative_prompt"]
             for i, scene in enumerate(scene_variations):
+                print(f"[DEBUG] Generating AI image {i+1}/5 for: {scene[:60]}")
                 image = pipe(
                     scene,
                     negative_prompt=negative_prompt,
@@ -190,7 +195,7 @@ def generate_storyboard():
                 captions.append(caption)
             storyboard = create_storyboard_layout(images, captions)
         else:
-            # --- Demo Mode ---
+            print("[DEBUG] Entering Demo mode.")
             storyboard, captions = generate_demo_storyboard(prompt, style)
         
         # Save storyboard
@@ -198,12 +203,14 @@ def generate_storyboard():
         filename = f"storyboard_{timestamp}.png"
         filepath = os.path.join('static/storyboards', filename)
         storyboard.save(filepath)
+        print(f"[DEBUG] Storyboard saved to {filepath}")
         
         # Convert to base64 for immediate display
         buffer = io.BytesIO()
         storyboard.save(buffer, format='PNG')
         buffer.seek(0)
         img_base64 = base64.b64encode(buffer.getvalue()).decode()
+        print(f"[DEBUG] Returning response for mode={mode}")
         
         return jsonify({
             'success': True,
@@ -216,6 +223,7 @@ def generate_storyboard():
         })
         
     except Exception as e:
+        print(f"[DEBUG] Exception in /generate: {e}")
         return jsonify({'error': f'Error generating storyboard: {str(e)}'}), 500
 
 @app.route('/download/<filename>')
