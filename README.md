@@ -201,10 +201,6 @@ User Input → [Frontend] → /generate → [Flask Backend]
 - **14. Prompt Engineering Tools:** Help users craft better prompts with suggestions, negative prompts, and prompt templates.
 - **15. Model Comparison:** Let users compare outputs from different Stable Diffusion checkpoints or custom models.
 
-## License
-
-This project is licensed under the Apache License 2.0 - see the LICENSE file for details. 
-
 ## Directory Structure
 
 ```
@@ -287,3 +283,7 @@ diffusion-lab/
 - **Console Tab:** Shows JavaScript errors, warnings, and logs. Red errors here often indicate why the UI is not working.
 - **Network Tab:** Shows all network requests. Look for 404s (missing files) or 500s (server errors) when you click Generate or load the page.
 - **Tip:** If you see a request to `/generate` with a 500 error, check the Flask logs for the cause. 
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the LICENSE file for details. 
