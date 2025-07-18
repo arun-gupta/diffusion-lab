@@ -52,7 +52,7 @@ A Python application and creative toolkit for generating storyboards, single-ima
 
    **Option A: Web Application (Recommended)**
    ```bash
-   python3 diffusionlab/api/webapp.py
+   python3 -m diffusionlab.api.webapp
    # Then open http://localhost:5001 in your browser
    ```
 
