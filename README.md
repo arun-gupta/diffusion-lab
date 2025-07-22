@@ -99,9 +99,20 @@ http://localhost:5001
 ![Sample Art](docs/sample-art.png)
 
 ### 🔄 Image-to-Image Transformation
-**Sketch → "A detailed oil painting of a majestic warrior in fantasy armor"** *(Cinematic style, strength: 0.75)*
+**"A polished character design for a sci-fi video game protagonist"** *(Photorealistic style, strength: 0.5)*
 
-![Sample Image-to-Image](docs/sample-img2img.png)
+<div style="display: flex; gap: 20px; align-items: center;">
+  <div style="text-align: center;">
+    <strong>Input Image</strong><br>
+    <small class="text-muted">(1870×2493 → 1024×1024)</small><br>
+    <img src="docs/sample-img2img-input.jpeg" alt="Input Image" style="max-width: 300px; height: auto;">
+  </div>
+  <div style="text-align: center;">
+    <strong>Output Image</strong><br>
+    <small class="text-muted">(AI standard size)</small><br>
+    <img src="docs/sample-img2img-output.png" alt="Output Image" style="max-width: 300px; height: auto;">
+  </div>
+</div>
 
 ### 🎯 Inpainting (Content-aware Fill)
 **Object removal: "Natural landscape continuation with trees and sky"** *(Photorealistic style)*
@@ -109,13 +120,20 @@ http://localhost:5001
 ![Sample Inpainting](docs/sample-inpainting.png)
 
 ### 🔗 Prompt Chaining (Story Evolution)
-**Character Journey: "A young adventurer's quest from village to mountain peak"** *(Cinematic style, 5-step evolution)*
+**Character Journey: "A young adventurer's quest from village to mountain peak"** *(Pixar style, 5-step evolution)*
+
+**Template Steps:**
+1. Character introduction and setting
+2. Character faces a challenge or conflict  
+3. Character overcomes the challenge
+4. Character learns and grows
+5. Character reaches their goal or destination
 
 ![Sample Prompt Chaining](docs/sample-promptchaining.png)
 
 <!--
 To add your own examples, place images in the docs/ directory and update the paths above.
-Examples include: main-ui.png, sample-storyboard.png, sample-art.png, sample-img2img.png, sample-inpainting.png, sample-promptchaining.png
+Examples include: main-ui.png, sample-storyboard.png, sample-art.png, sample-img2img-input.jpeg, sample-img2img-output.png, sample-inpainting.png, sample-promptchaining.png
 -->
 
 ## How It Works
@@ -363,35 +381,7 @@ Prompt Chaining creates a sequence of images that tell a story by generating mul
 - **Action Sequences**: Create clear cause-and-effect relationships
 - **Style Consistency**: Use the same style for all images in your story
 
-### Story Templates
 
-#### Character Journey Template
-1. **Introduction**: Character in their starting environment
-2. **Challenge**: Character faces a problem or obstacle
-3. **Struggle**: Character works to overcome the challenge
-4. **Growth**: Character learns and develops
-5. **Resolution**: Character achieves their goal
-
-#### Environmental Progression Template
-1. **Peaceful State**: Initial calm environment
-2. **Change Begins**: First signs of transformation
-3. **Major Event**: Significant change or conflict
-4. **Aftermath**: Consequences of the change
-5. **New Equilibrium**: Resolution and new state
-
-#### Emotional Arc Template
-1. **Starting State**: Initial emotional condition
-2. **Building Tension**: Increasing emotional pressure
-3. **Climax**: Peak emotional moment
-4. **Resolution**: Beginning of emotional resolution
-5. **Transformation**: New emotional state
-
-#### Action Sequence Template
-1. **Setup**: Preparation and context
-2. **Action Begins**: First movement or conflict
-3. **Escalation**: Increasing intensity
-4. **Climax**: Peak action moment
-5. **Resolution**: Outcome and aftermath
 
 ### Common Use Cases
 
