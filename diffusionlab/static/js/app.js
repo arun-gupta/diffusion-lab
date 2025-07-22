@@ -26,7 +26,8 @@ class StoryboardGenerator {
 
     bindEvents() {
         // Form submission
-        document.getElementById('storyboardForm').addEventListener('submit', (e) => {
+        const form = document.getElementById('storyboardForm');
+        form.addEventListener('submit', (e) => {
             e.preventDefault();
             this.generateStoryboard();
         });
