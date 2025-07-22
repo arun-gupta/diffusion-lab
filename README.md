@@ -126,9 +126,25 @@ Cinematic
 
 ![Sample Image-to-Image](docs/sample-img2img.png)
 
+**Inpainting Example:**
+
+**Input Image:**
+A landscape photo with an unwanted object
+
+**Mask:**
+Red brush strokes drawn over the object to be removed
+
+**Prompt:**
+Natural landscape continuation with trees and sky
+
+**Style:**
+Photorealistic
+
+![Sample Inpainting](docs/sample-inpainting.png)
+
 <!--
 To add your own examples, place images in the docs/ directory and update the paths above.
-Examples include: main-ui.png, sample-storyboard.png, sample-art.png, sample-img2img.png
+Examples include: main-ui.png, sample-storyboard.png, sample-art.png, sample-img2img.png, sample-inpainting.png
 -->
 
 ## How It Works
