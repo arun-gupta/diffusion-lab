@@ -395,11 +395,17 @@ def generate_storyboard():
         if style not in STYLES:
             print(f"[DEBUG] Invalid style '{style}', defaulting to cinematic.")
             style = 'cinematic'
+        # Import configurations needed for both AI and demo modes
+        try:
+            from diffusionlab.config import INPAINTING_CONFIG, BATCH_CONFIG
+        except ImportError as e:
+            print(f"[DEBUG] ImportError loading configs: {e}")
+            return jsonify({'error': 'Configuration not available. Please ensure diffusionlab/config.py is present.'}), 500
+            
         if mode == 'ai':
             print("[DEBUG] Entering Full AI mode.")
             try:
                 from diffusionlab.tasks.storyboard import generate_scene_variations, generate_caption, pipe, inpaint_pipe, STYLE_PRESETS, IMAGE_CONFIG
-                from diffusionlab.config import INPAINTING_CONFIG, BATCH_CONFIG
             except ImportError as e:
                 print(f"[DEBUG] ImportError in AI mode: {e}")
                 return jsonify({'error': 'AI mode is not available. Please ensure diffusionlab/tasks/storyboard.py and dependencies are present.'}), 500

@@ -181,9 +181,9 @@ python3 -m diffusionlab.api.webapp
 - **✅ Image-to-Image**: Transform sketches into artwork *(Implemented)*
 - **✅ Inpainting**: Remove/replace image content *(Implemented)*
 - **✅ Prompt Chaining**: Create story sequences *(Implemented)*
+- **✅ Batch Generation**: Multiple variations with configurable parameters *(Implemented)*
 - **🔄 Outpainting**: Extend image borders
 - **🔄 Style Transfer**: Apply artistic styles
-- **🔄 Batch Generation**: Multiple variations
 - **🔄 Animated Diffusion**: Frame interpolation
 - **🔄 Custom Training**: DreamBooth integration
 
