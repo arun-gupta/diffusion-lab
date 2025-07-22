@@ -180,11 +180,22 @@ class StoryboardGenerator {
             document.getElementById('singleImageContainer').classList.remove('d-none');
             document.getElementById('storyboardContainer').classList.add('d-none');
             document.getElementById('img2imgSection').style.display = 'block';
+            // Show placeholder if no image is uploaded
+            if (!this.uploadedImagePath) {
+                document.getElementById('img2imgPlaceholder').style.display = 'block';
+                document.getElementById('imagePreview').style.display = 'none';
+            }
         } else if (genType === 'inpainting') {
             document.getElementById('captionsCard').classList.add('d-none');
             document.getElementById('singleImageContainer').classList.remove('d-none');
             document.getElementById('storyboardContainer').classList.add('d-none');
             document.getElementById('inpaintingSection').style.display = 'block';
+            // Show placeholder if no image is uploaded
+            if (!this.inpaintingImagePath) {
+                document.getElementById('inpaintingPlaceholder').style.display = 'block';
+                document.getElementById('inpaintingPreview').style.display = 'none';
+                document.getElementById('inpaintingCanvasContainer').style.display = 'none';
+            }
         } else if (genType === 'prompt-chaining') {
             document.getElementById('captionsCard').classList.add('d-none');
             document.getElementById('singleImageContainer').classList.add('d-none');
@@ -782,6 +793,7 @@ class StoryboardGenerator {
         reader.onload = (e) => {
             document.getElementById('previewImg').src = e.target.result;
             document.getElementById('imagePreview').style.display = 'block';
+            document.getElementById('img2imgPlaceholder').style.display = 'none';
         };
         reader.readAsDataURL(file);
     }
@@ -790,6 +802,7 @@ class StoryboardGenerator {
         this.uploadedImagePath = null;
         document.getElementById('inputImage').value = '';
         document.getElementById('imagePreview').style.display = 'none';
+        document.getElementById('img2imgPlaceholder').style.display = 'block';
         document.getElementById('previewImg').src = '';
         this.updateStatus('Image removed', 'info');
     }
@@ -848,6 +861,7 @@ class StoryboardGenerator {
             document.getElementById('inpaintingPreviewImg').src = e.target.result;
             document.getElementById('inpaintingPreview').style.display = 'block';
             document.getElementById('inpaintingCanvasContainer').style.display = 'block';
+            document.getElementById('inpaintingPlaceholder').style.display = 'none';
             
             // Initialize canvas
             this.initCanvas(e.target.result);
@@ -1017,6 +1031,7 @@ class StoryboardGenerator {
         document.getElementById('inpaintingPreview').style.display = 'none';
         document.getElementById('inpaintingPreviewImg').src = '';
         document.getElementById('inpaintingCanvasContainer').style.display = 'none';
+        document.getElementById('inpaintingPlaceholder').style.display = 'block';
         this.canvas = null;
         this.ctx = null;
         this.updateStatus('Inpainting image removed', 'info');

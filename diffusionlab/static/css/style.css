@@ -336,6 +336,27 @@ footer {
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
+/* Placeholder styling */
+#img2imgPlaceholder, #inpaintingPlaceholder {
+    transition: all 0.3s ease;
+}
+
+#img2imgPlaceholder:hover, #inpaintingPlaceholder:hover {
+    background-color: #e9ecef;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.placeholder-icon {
+    color: #6c757d;
+    transition: color 0.3s ease;
+}
+
+#img2imgPlaceholder:hover .placeholder-icon,
+#inpaintingPlaceholder:hover .placeholder-icon {
+    color: #495057;
+}
+
 /* Mask Preview */
 .mask-preview-overlay {
     position: absolute;

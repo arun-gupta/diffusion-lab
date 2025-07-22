@@ -79,6 +79,18 @@
                                 <input type="file" class="form-control" id="inputImage" accept="image/*">
                                 <div class="form-text">Upload an image to transform it with your prompt. Works best with sketches, photos, or rough concepts.</div>
                                 
+                                <!-- Placeholder Image -->
+                                <div class="mt-2" id="img2imgPlaceholder">
+                                    <div class="border-2 border-dashed border-secondary rounded p-4 text-center" style="border-style: dashed; min-height: 200px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa;">
+                                        <div>
+                                            <i class="fas fa-image fa-3x text-muted mb-3 placeholder-icon"></i>
+                                            <h6 class="text-muted">No Image Selected</h6>
+                                            <p class="text-muted mb-0">Upload an image to see the preview here</p>
+                                            <small class="text-muted">Supports: JPG, PNG, GIF, BMP, WebP</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 <div class="mt-2" id="imagePreview" style="display: none;">
                                     <img id="previewImg" class="img-fluid rounded" style="max-height: 200px;">
                                     <button type="button" class="btn btn-sm btn-outline-danger mt-1" id="removeImage">
@@ -100,6 +112,18 @@
                                 <label for="inpaintingImage" class="form-label">Input Image (for Inpainting):</label>
                                 <input type="file" class="form-control" id="inpaintingImage" accept="image/*">
                                 <div class="form-text">Upload an image and draw masks on areas you want to change or fill.</div>
+                                
+                                <!-- Placeholder Image -->
+                                <div class="mt-2" id="inpaintingPlaceholder">
+                                    <div class="border-2 border-dashed border-secondary rounded p-4 text-center" style="border-style: dashed; min-height: 200px; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa;">
+                                        <div>
+                                            <i class="fas fa-magic fa-3x text-muted mb-3 placeholder-icon"></i>
+                                            <h6 class="text-muted">No Image Selected</h6>
+                                            <p class="text-muted mb-0">Upload an image to start inpainting</p>
+                                            <small class="text-muted">Supports: JPG, PNG, GIF, BMP, WebP</small>
+                                        </div>
+                                    </div>
+                                </div>
                                 
                                 <div class="mt-3" id="inpaintingCanvasContainer" style="display: none;">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
