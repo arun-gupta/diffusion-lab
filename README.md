@@ -22,6 +22,7 @@ A Python application and creative toolkit for generating storyboards, single-ima
 
 - **Storyboard Mode:** Generate a 5-panel storyboard from a scene description, with AI-generated images and captions.
 - **Single-Image Art Mode:** Generate a single, high-quality AI image from a prompt in your chosen style.
+- **Image-to-Image (img2img):** Transform sketches, photos, or rough concepts into polished art by uploading an input image and applying AI transformation.
 - **Export:** Save storyboards as PDF or images.
 
 ## Configurable Options
@@ -109,19 +110,39 @@ Pixar
 
 ![Sample Art](docs/sample-art.png)
 
+**Image-to-Image Example:**
+
+**Input Image:**
+A rough pencil sketch of a character
+
+**Prompt:**
+A detailed oil painting of a majestic warrior in fantasy armor
+
+**Style:**
+Cinematic
+
+**Strength:**
+0.75
+
+![Sample Image-to-Image](docs/sample-img2img.png)
+
 <!--
 To add your own examples, place images in the docs/ directory and update the paths above.
+Examples include: main-ui.png, sample-storyboard.png, sample-art.png, sample-img2img.png
 -->
 
 ## How It Works
 
 1. **User Input:**
-   - The user enters a scene description or art prompt in the web UI and selects the desired mode (Storyboard or Single-Image Art), style, and Demo/AI mode.
+   - The user enters a scene description or art prompt in the web UI and selects the desired mode (Storyboard, Single-Image Art, or Image-to-Image), style, and Demo/AI mode.
+   - For Image-to-Image mode, the user uploads an input image and adjusts the transformation strength.
 2. **Request Sent to Backend:**
    - The frontend sends the input to the Flask backend via an AJAX request.
+   - For img2img, the input image is uploaded separately and processed.
 3. **AI Model Processing:**
    - In Demo mode, the backend generates placeholder images and captions.
    - In AI mode, the backend uses Stable Diffusion XL (for images) and StableLM (for captions) to generate real, high-quality outputs based on the prompt and style.
+   - For img2img, the AI model transforms the uploaded image according to the prompt and strength setting.
 4. **Output Generation:**
    - The backend assembles the images (and captions, if storyboard) into a single output image (storyboard or single art piece).
 5. **Result Displayed:**
@@ -143,10 +164,84 @@ User Input → [Frontend] → /generate → [Flask Backend]
 3. Use the Demo/AI toggle to choose between fast demo mode and full AI mode
 4. Enter your scene description or art prompt in the text box
 5. Choose your preferred style from the dropdown
-6. Click "Generate"
-7. Download the PNG file or view the results
+6. **For Image-to-Image mode:**
+   - Upload an input image (sketch, photo, or concept)
+   - Adjust the transformation strength slider (0.1 = keep original, 1.0 = complete transformation)
+7. Click "Generate"
+8. Download the PNG file or view the results
 
 **Note:** Generated images are saved locally in the `static/storyboards/` directory.
+
+## Image-to-Image (img2img) Usage Guide
+
+### Getting Started with Image-to-Image
+
+The Image-to-Image feature allows you to transform existing images using AI. This is perfect for:
+- Converting sketches into finished artwork
+- Enhancing or stylizing photographs
+- Developing concept art from rough ideas
+- Changing image styles while preserving content
+
+> **💡 See the example above**: Check out the "Image-to-Image Example" in the Example Outputs section to see a before/after transformation of a sketch into a detailed oil painting.
+
+### Step-by-Step Process
+
+1. **Select Image-to-Image Mode**
+   - Choose "Image-to-Image" from the Generation Type dropdown
+   - The image upload section will automatically appear
+
+2. **Upload Your Input Image**
+   - Click "Choose File" and select your image
+   - Supported formats: JPEG, PNG, GIF, BMP, WebP
+   - Maximum file size: 10MB
+   - The image will be automatically resized to 512x512 pixels
+
+3. **Adjust Transformation Strength**
+   - Use the slider to control how much the AI should transform your image
+   - **0.1-0.3**: Subtle changes, preserves most of the original
+   - **0.4-0.6**: Moderate transformation, good balance
+   - **0.7-0.9**: Significant changes, more creative interpretation
+   - **1.0**: Complete transformation, maximum creativity
+
+4. **Write Your Transformation Prompt**
+   - Describe what you want the AI to do with your image
+   - Be specific about style, mood, and desired changes
+   - Example: "Transform this into a cyberpunk cityscape with neon lights"
+
+5. **Choose Your Style**
+   - Select from available styles (Cinematic, Anime, Photorealistic, etc.)
+   - The style will influence the final appearance
+
+6. **Generate and Download**
+   - Click "Generate" to start the transformation
+   - Wait for processing (faster in Demo mode, slower in AI mode)
+   - Download your transformed image when complete
+
+### Tips for Best Results
+
+- **Start with Clear Images**: Higher quality input images produce better results
+- **Use Descriptive Prompts**: Be specific about what you want to change
+- **Experiment with Strength**: Try different strength values for the same image
+- **Combine with Styles**: Use style presets to enhance your transformations
+- **Iterate**: Generate multiple versions and refine your prompts
+
+### Common Use Cases
+
+- **Artists**: Convert rough sketches into finished illustrations
+- **Photographers**: Enhance or stylize existing photos
+- **Designers**: Develop concepts from basic drawings
+- **Content Creators**: Create variations of existing images
+- **Students**: Practice art techniques and styles
+
+### Quick Reference
+
+| Input Type | Recommended Strength | Example Prompt |
+|------------|---------------------|----------------|
+| Pencil Sketch | 0.7-0.9 | "A detailed oil painting with vibrant colors" |
+| Blurry Photo | 0.4-0.6 | "A sharp, high-resolution photograph" |
+| Portrait | 0.5-0.8 | "A renaissance-style oil painting" |
+| Landscape | 0.6-0.9 | "A cyberpunk cityscape with neon lights" |
+| Character Design | 0.7-1.0 | "A professional character concept for a video game" |
 
 ### Gradio Interface
 1. Open your browser and go to `http://localhost:7860`
@@ -158,9 +253,17 @@ User Input → [Frontend] → /generate → [Flask Backend]
 
 ## Example Inputs
 
+### Storyboard & Single-Image Art Prompts
 - "A detective walks into a neon-lit alley at midnight, rain pouring down"
 - "A robot wanders a post-apocalyptic desert searching for signs of life"
 - "A young wizard discovers an ancient library hidden in the mountains"
+
+### Image-to-Image Transformation Examples
+- **Sketch to Art**: Upload a pencil sketch + "A detailed oil painting of a majestic dragon in a fantasy landscape"
+- **Photo Enhancement**: Upload a blurry photo + "A sharp, professional photograph with enhanced details and vibrant colors"
+- **Style Transfer**: Upload a portrait photo + "A renaissance-style oil painting with dramatic lighting and rich textures"
+- **Concept Development**: Upload a rough doodle + "A polished character design for a sci-fi video game protagonist"
+- **Background Change**: Upload a person photo + "The same person standing in a cyberpunk cityscape at night"
 
 ## Technical Details
 
@@ -185,7 +288,7 @@ User Input → [Frontend] → /generate → [Flask Backend]
 
 ## Planned Features
 
-- **1. Image-to-Image (img2img):** Transform sketches, photos, or rough concepts into polished art.
+- **✅ 1. Image-to-Image (img2img):** Transform sketches, photos, or rough concepts into polished art. *(Implemented)*
 - **2. Inpainting (Content-aware Fill):** Remove or replace parts of an image by masking them and describing what should go there.
 - **3. Outpainting (Image Expansion):** Extend the borders of an image with new, contextually appropriate content.
 - **4. Style Transfer:** Apply the style of one image (e.g., a famous painting) to another image.
@@ -273,6 +376,32 @@ diffusion-lab/
 - Always run the app from the project root.
 - If you make structural changes, restart the Flask server.
 - For more help, check the browser console, Flask logs, and the [Issues](https://github.com/arun-gupta/diffusion-lab/issues) page.
+
+### Image-to-Image Specific Issues
+
+**Upload Fails**
+- **Symptom**: "Invalid file type" error when uploading images
+- **Solution**: Ensure your image is in a supported format (JPEG, PNG, GIF, BMP, WebP)
+
+**File Too Large**
+- **Symptom**: "Image file too large" error
+- **Solution**: Resize your image to under 10MB before uploading
+
+**No Transformation Effect**
+- **Symptom**: Output looks identical to input
+- **Solution**: Increase the strength slider value (try 0.7-1.0)
+
+**Too Much Transformation**
+- **Symptom**: Output is completely different from input
+- **Solution**: Decrease the strength slider value (try 0.1-0.3)
+
+**Poor Quality Results**
+- **Symptom**: Transformed image looks blurry or distorted
+- **Solution**: 
+  - Use higher quality input images
+  - Try different strength values
+  - Experiment with different style presets
+  - Use more descriptive prompts
 
 ### How to Check Flask Logs
 - When running the app, watch the terminal for error messages or tracebacks after you perform an action in the UI (like clicking Generate).

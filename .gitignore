@@ -75,3 +75,9 @@ logs/
 tmp/
 temp/
 *.tmp 
+
+# Ignore all PNG files by default
+*.png
+
+# But do NOT ignore PNGs in the docs directory
+!docs/*.png 

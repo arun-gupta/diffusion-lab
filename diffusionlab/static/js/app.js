@@ -5,6 +5,7 @@ class StoryboardGenerator {
         this.currentFilename = null;
         this._aiModal = null;
         this._aiCancelled = false;
+        this.uploadedImagePath = null;
         this.init();
     }
 
@@ -12,6 +13,7 @@ class StoryboardGenerator {
         this.bindEvents();
         this.updateStyleDescription();
         this.updateModeLabel(); // Initialize mode label on load
+        this.updateStatusMessage(); // Initialize status message
     }
 
     bindEvents() {
@@ -56,6 +58,19 @@ class StoryboardGenerator {
         document.getElementById('aiCancelBtn').addEventListener('click', () => {
             this.cancelAiGeneration();
         });
+
+        // Image-to-Image functionality
+        document.getElementById('inputImage').addEventListener('change', (e) => {
+            this.handleImageUpload(e);
+        });
+
+        document.getElementById('removeImage').addEventListener('click', () => {
+            this.removeUploadedImage();
+        });
+
+        document.getElementById('strengthSlider').addEventListener('input', (e) => {
+            document.getElementById('strengthValue').textContent = e.target.value;
+        });
     }
 
     updateStyleDescription() {
@@ -80,14 +95,37 @@ class StoryboardGenerator {
 
     updateModeUI() {
         const mode = this.getCurrentMode();
-        if (mode === 'single') {
+        const genType = document.getElementById('generationMode').value;
+        
+        if (genType === 'single' || genType === 'img2img') {
             document.getElementById('captionsCard').classList.add('d-none');
             document.getElementById('singleImageContainer').classList.remove('d-none');
             document.getElementById('storyboardContainer').classList.add('d-none');
+            // Show img2img section for single image and img2img modes
+            document.getElementById('img2imgSection').style.display = 'block';
         } else {
             document.getElementById('captionsCard').classList.add('d-none');
             document.getElementById('singleImageContainer').classList.add('d-none');
             document.getElementById('storyboardContainer').classList.remove('d-none');
+            // Hide img2img section for storyboard mode
+            document.getElementById('img2imgSection').style.display = 'none';
+            // Clear any uploaded image when switching to storyboard mode
+            this.removeUploadedImage();
+        }
+        
+        // Update status message
+        this.updateStatusMessage();
+    }
+
+    updateStatusMessage() {
+        const genType = document.getElementById('generationMode').value;
+        const statusElement = document.getElementById('status');
+        
+        if (statusElement.className.includes('text-muted')) {
+            const defaultMessage = genType === 'img2img' ? 'Ready to transform image' :
+                                 genType === 'single' ? 'Ready to generate art' :
+                                 'Ready to generate storyboard';
+            statusElement.textContent = defaultMessage;
         }
     }
 
@@ -113,6 +151,12 @@ class StoryboardGenerator {
             return;
         }
 
+        // Additional validation for img2img mode
+        if (genType === 'img2img' && !this.uploadedImagePath) {
+            this.updateStatus('Please upload an input image for Image-to-Image mode', 'error');
+            return;
+        }
+
         // Show loading state
         if (mode === 'ai') {
             this._aiCancelled = false;
@@ -120,9 +164,15 @@ class StoryboardGenerator {
         } else {
             this.showLoading();
         }
-        this.updateStatus('Generating storyboard...', 'info');
+        const statusMessage = genType === 'img2img' ? 'Transforming image...' : 
+                             genType === 'single' ? 'Generating art...' : 
+                             'Generating storyboard...';
+        this.updateStatus(statusMessage, 'info');
 
         try {
+            const strength = parseFloat(document.getElementById('strengthSlider').value);
+            const img2img = this.uploadedImagePath !== null;
+            
             const response = await fetch('/generate', {
                 method: 'POST',
                 headers: {
@@ -132,7 +182,10 @@ class StoryboardGenerator {
                     prompt: prompt,
                     style: style,
                     mode: mode,
-                    genType: genType
+                    genType: genType,
+                    img2img: img2img,
+                    inputImagePath: this.uploadedImagePath,
+                    strength: strength
                 })
             });
 
@@ -145,7 +198,7 @@ class StoryboardGenerator {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                if (mode === 'single') {
+                if (genType === 'single' || genType === 'img2img') {
                     this.displaySingleImage(data);
                 } else {
                     this.displayStoryboard(data);
@@ -257,9 +310,13 @@ class StoryboardGenerator {
     showLoading() {
         const generateBtn = document.getElementById('generateBtn');
         const progressBar = document.getElementById('progressBar');
+        const genType = document.getElementById('generationMode').value;
         
         generateBtn.disabled = true;
-        generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        const btnText = genType === 'img2img' ? 'Transforming...' : 
+                       genType === 'single' ? 'Generating...' : 
+                       'Generating...';
+        generateBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${btnText}`;
         
         progressBar.classList.remove('d-none');
         this.simulateProgress();
@@ -298,7 +355,11 @@ class StoryboardGenerator {
         // Auto-clear success messages after 5 seconds
         if (type === 'success') {
             setTimeout(() => {
-                statusElement.textContent = 'Ready to generate storyboard';
+                const genType = document.getElementById('generationMode').value;
+                const defaultMessage = genType === 'img2img' ? 'Ready to transform image' :
+                                     genType === 'single' ? 'Ready to generate art' :
+                                     'Ready to generate storyboard';
+                statusElement.textContent = defaultMessage;
                 statusElement.className = 'text-muted';
             }, 5000);
         }
@@ -347,6 +408,23 @@ class StoryboardGenerator {
 
     showAiLoadingModal() {
         const modal = new bootstrap.Modal(document.getElementById('aiLoadingModal'));
+        const genType = document.getElementById('generationMode').value;
+        
+        // Update loading modal content based on generation type
+        const loadingTitle = document.getElementById('loadingTitle');
+        const loadingDescription = document.getElementById('loadingDescription');
+        
+        if (genType === 'img2img') {
+            loadingTitle.textContent = 'Transforming Your Image';
+            loadingDescription.textContent = 'Applying AI transformation to your uploaded image...';
+        } else if (genType === 'single') {
+            loadingTitle.textContent = 'Generating Your Art';
+            loadingDescription.textContent = 'Creating a unique piece of art from your prompt...';
+        } else {
+            loadingTitle.textContent = 'Generating Your Storyboard';
+            loadingDescription.textContent = 'Creating 5 unique panels for your scene...';
+        }
+        
         this._aiModal = modal;
         modal.show();
     }
@@ -362,6 +440,70 @@ class StoryboardGenerator {
         this._aiCancelled = true;
         this.hideAiLoadingModal();
         this.updateStatus('AI generation cancelled.', 'info');
+    }
+
+    async handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            this.updateStatus('Please select a valid image file (JPEG, PNG, GIF, BMP, WebP)', 'error');
+            event.target.value = '';
+            return;
+        }
+
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            this.updateStatus('Image file too large. Please select an image smaller than 10MB', 'error');
+            event.target.value = '';
+            return;
+        }
+
+        try {
+            this.updateStatus('Uploading image...', 'info');
+            
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                this.uploadedImagePath = data.filepath;
+                this.showImagePreview(file);
+                this.updateStatus('Image uploaded successfully!', 'success');
+            } else {
+                this.updateStatus(data.error || 'Failed to upload image', 'error');
+                event.target.value = '';
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            this.updateStatus('Failed to upload image', 'error');
+            event.target.value = '';
+        }
+    }
+
+    showImagePreview(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById('previewImg').src = e.target.result;
+            document.getElementById('imagePreview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    removeUploadedImage() {
+        this.uploadedImagePath = null;
+        document.getElementById('inputImage').value = '';
+        document.getElementById('imagePreview').style.display = 'none';
+        document.getElementById('previewImg').src = '';
+        this.updateStatus('Image removed', 'info');
     }
 }
 

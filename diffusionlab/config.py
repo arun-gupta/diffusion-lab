@@ -138,6 +138,16 @@ PERFORMANCE_CONFIG = {
     "enable_sequential_cpu_offload": False
 }
 
+# Image-to-Image Settings
+IMG2IMG_CONFIG = {
+    "strength": 0.75,  # How much to transform the input image (0.0 = keep original, 1.0 = completely new)
+    "guidance_scale": 7.5,
+    "num_inference_steps": 30,
+    "width": 512,
+    "height": 512,
+    "num_images_per_prompt": 1
+}
+
 # Validation Rules
 VALIDATION_RULES = {
     "min_prompt_length": 10,

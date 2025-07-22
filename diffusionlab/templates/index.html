@@ -31,8 +31,9 @@
                                 <select class="form-select" id="generationMode">
                                     <option value="storyboard">Storyboard (5 panels)</option>
                                     <option value="single">Single-Image Art</option>
+                                    <option value="img2img">Image-to-Image</option>
                                 </select>
-                                <div class="form-text">Choose to generate a storyboard or a single piece of art.</div>
+                                <div class="form-text">Choose to generate a storyboard, single art piece, or transform an uploaded image.</div>
                             </div>
 
                             <div class="mb-3">
@@ -70,6 +71,28 @@
                                 </div>
                             </div>
 
+                            <!-- Image-to-Image Upload Section -->
+                            <div class="mb-3" id="img2imgSection" style="display: none;">
+                                <label for="inputImage" class="form-label">Input Image (for Image-to-Image):</label>
+                                <input type="file" class="form-control" id="inputImage" accept="image/*">
+                                <div class="form-text">Upload an image to transform it with your prompt. Works best with sketches, photos, or rough concepts.</div>
+                                
+                                <div class="mt-2" id="imagePreview" style="display: none;">
+                                    <img id="previewImg" class="img-fluid rounded" style="max-height: 200px;">
+                                    <button type="button" class="btn btn-sm btn-outline-danger mt-1" id="removeImage">
+                                        <i class="fas fa-times"></i> Remove Image
+                                    </button>
+                                </div>
+                                
+                                <div class="mt-2">
+                                    <label for="strengthSlider" class="form-label">Transformation Strength: <span id="strengthValue">0.75</span></label>
+                                    <input type="range" class="form-range" id="strengthSlider" min="0.1" max="1.0" step="0.05" value="0.75">
+                                    <div class="form-text">
+                                        <small>0.1 = Keep original, 1.0 = Complete transformation</small>
+                                    </div>
+                                </div>
+                            </div>
+
                             <button type="submit" class="btn btn-primary btn-lg w-100" id="generateBtn">
                                 <i class="fas fa-magic"></i> Generate
                             </button>
@@ -78,23 +101,97 @@
                         <!-- Example Prompts -->
                         <div class="mt-4">
                             <h6><i class="fas fa-lightbulb"></i> Example Prompts:</h6>
-                            <div class="list-group list-group-flush">
-                                <button class="list-group-item list-group-item-action example-prompt" 
-                                        data-prompt="A detective walks into a neon-lit alley at midnight, rain pouring down">
-                                    Detective in neon-lit alley
-                                </button>
-                                <button class="list-group-item list-group-item-action example-prompt" 
-                                        data-prompt="A robot wanders a post-apocalyptic desert searching for signs of life">
-                                    Robot in post-apocalyptic desert
-                                </button>
-                                <button class="list-group-item list-group-item-action example-prompt" 
-                                        data-prompt="A young wizard discovers an ancient library hidden in the mountains">
-                                    Wizard discovers ancient library
-                                </button>
-                                <button class="list-group-item list-group-item-action example-prompt" 
-                                        data-prompt="A spaceship crew encounters an alien artifact on a distant planet">
-                                    Spaceship crew finds alien artifact
-                                </button>
+                            
+                            <!-- Tab Navigation -->
+                            <ul class="nav nav-tabs nav-fill" id="exampleTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="storyboard-tab" data-bs-toggle="tab" data-bs-target="#storyboard-examples" type="button" role="tab">
+                                        <i class="fas fa-film"></i> Storyboard
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="single-tab" data-bs-toggle="tab" data-bs-target="#single-examples" type="button" role="tab">
+                                        <i class="fas fa-image"></i> Single Image
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="img2img-tab" data-bs-toggle="tab" data-bs-target="#img2img-examples" type="button" role="tab">
+                                        <i class="fas fa-exchange-alt"></i> Image-to-Image
+                                    </button>
+                                </li>
+                            </ul>
+                            
+                            <!-- Tab Content -->
+                            <div class="tab-content" id="exampleTabContent">
+                                <!-- Storyboard Examples -->
+                                <div class="tab-pane fade show active" id="storyboard-examples" role="tabpanel">
+                                    <div class="list-group list-group-flush mt-2">
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A detective walks into a neon-lit alley at midnight, rain pouring down">
+                                            🕵️ Detective in neon-lit alley
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A robot wanders a post-apocalyptic desert searching for signs of life">
+                                            🤖 Robot in post-apocalyptic desert
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A young wizard discovers an ancient library hidden in the mountains">
+                                            🧙‍♂️ Wizard discovers ancient library
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A spaceship crew encounters an alien artifact on a distant planet">
+                                            🚀 Spaceship crew finds alien artifact
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Single Image Examples -->
+                                <div class="tab-pane fade" id="single-examples" role="tabpanel">
+                                    <div class="list-group list-group-flush mt-2">
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A cyberpunk cityscape with towering neon skyscrapers and flying cars">
+                                            🌃 Cyberpunk cityscape
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A majestic castle floating in the clouds with waterfalls cascading down">
+                                            🏰 Floating castle in the clouds
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A futuristic robot warrior in a neon-lit battlefield">
+                                            ⚡ Futuristic robot warrior
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A magical forest with glowing mushrooms and fairy lights">
+                                            🌟 Magical forest with glowing mushrooms
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Image-to-Image Examples -->
+                                <div class="tab-pane fade" id="img2img-examples" role="tabpanel">
+                                    <div class="list-group list-group-flush mt-2">
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A detailed oil painting of a majestic dragon in a fantasy landscape">
+                                            🎨 Sketch to Art: Dragon painting
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A sharp, professional photograph with enhanced details and vibrant colors">
+                                            📸 Photo Enhancement: Sharp & vibrant
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A renaissance-style oil painting with dramatic lighting and rich textures">
+                                            🖼️ Style Transfer: Renaissance portrait
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A polished character design for a sci-fi video game protagonist">
+                                            🎮 Concept Design: Sci-fi character
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A watercolor painting with soft, dreamy colors and flowing brushstrokes">
+                                            🎨 Style Transfer: Watercolor painting
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -106,7 +203,7 @@
                         <h6><i class="fas fa-info-circle"></i> Status</h6>
                     </div>
                     <div class="card-body">
-                        <div id="status" class="text-muted">Ready to generate storyboard</div>
+                        <div id="status" class="text-muted">Ready to generate</div>
                         <div class="progress mt-2 d-none" id="progressBar">
                             <div class="progress-bar progress-bar-striped progress-bar-animated" 
                                  role="progressbar" style="width: 0%"></div>
@@ -168,8 +265,8 @@
                     <div class="spinner-border text-primary mb-3" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-                    <h5>Generating Your Storyboard</h5>
-                    <p class="text-muted">Creating 5 unique panels for your scene...</p>
+                    <h5 id="loadingTitle">Generating Your Storyboard</h5>
+                    <p class="text-muted" id="loadingDescription">Creating 5 unique panels for your scene...</p>
                     <div class="progress">
                         <div class="progress-bar progress-bar-striped progress-bar-animated" 
                              role="progressbar" style="width: 0%"></div>
