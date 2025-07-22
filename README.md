@@ -101,18 +101,9 @@ http://localhost:5001
 ### 🔄 Image-to-Image Transformation
 **"A polished character design for a sci-fi video game protagonist"** *(Photorealistic style, strength: 0.5)*
 
-<div style="display: flex; gap: 20px; align-items: center;">
-  <div style="text-align: center;">
-    <strong>Input Image</strong><br>
-    <small class="text-muted">(1870×2493 → 1024×1024)</small><br>
-    <img src="docs/sample-img2img-input.jpeg" alt="Input Image" style="max-width: 300px; height: auto;">
-  </div>
-  <div style="text-align: center;">
-    <strong>Output Image</strong><br>
-    <small class="text-muted">(AI standard size)</small><br>
-    <img src="docs/sample-img2img-output.png" alt="Output Image" style="max-width: 300px; height: auto;">
-  </div>
-</div>
+**Input Image** *(1870×2493 → 1024×1024)* | **Output Image** *(AI standard size)*
+---|---|---
+![Input Image](docs/sample-img2img-input.jpeg) | ![Output Image](docs/sample-img2img-output.png)
 
 ### 🎯 Inpainting (Content-aware Fill)
 **Object removal: "Natural landscape continuation with trees and sky"** *(Photorealistic style)*
