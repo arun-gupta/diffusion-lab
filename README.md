@@ -24,6 +24,7 @@ python3 -m diffusionlab.api.webapp
 
 - **📖 Storyboard Generation**: Create 5-panel storyboards with AI images and captions
 - **🎨 Single-Image Art**: Generate high-quality AI images from text prompts
+- **🔄 Batch Generation**: Create multiple variations of the same prompt for creative exploration
 - **🔄 Image-to-Image**: Transform sketches/photos into polished artwork
 - **🎯 Inpainting**: Remove objects or fill areas with AI-generated content
 - **🔗 Prompt Chaining**: Create evolving story sequences with multiple prompts
@@ -40,6 +41,11 @@ python3 -m diffusionlab.api.webapp
 **"A spaceship crew encounters an alien artifact on a distant planet"** *(Pixar style)*
 
 ![Sample Art](docs/sample-art.png)
+
+### 🔄 Batch Generation
+**"A futuristic cityscape with flying cars and neon lights"** *(4 variations, Cinematic style)*
+
+![Sample Batch](docs/sample-batch.png)
 
 ### 🔄 Image-to-Image Transformation
 **"A polished character design for a sci-fi video game protagonist"** *(Photorealistic style, strength: 0.5)*

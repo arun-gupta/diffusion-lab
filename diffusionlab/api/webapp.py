@@ -381,10 +381,11 @@ def generate_storyboard():
         mask_data = data.get('maskData', None)
         strength = data.get('strength', 0.75)
         prompt_chain_data = data.get('promptChain', None)
+        batch_data = data.get('batch', None)
         print(f"[DEBUG] /generate called with mode={mode}, genType={gen_type}, style={style}, prompt={prompt[:40]}")
         
         # Skip main prompt validation for prompt chaining mode
-        if gen_type != 'prompt-chaining':
+        if gen_type != 'prompt-chaining' and gen_type != 'batch':
             if not prompt:
                 print("[DEBUG] No prompt provided.")
                 return jsonify({'error': 'Please enter a scene description'}), 400
@@ -398,12 +399,12 @@ def generate_storyboard():
             print("[DEBUG] Entering Full AI mode.")
             try:
                 from diffusionlab.tasks.storyboard import generate_scene_variations, generate_caption, pipe, inpaint_pipe, STYLE_PRESETS, IMAGE_CONFIG
-                from diffusionlab.config import INPAINTING_CONFIG
+                from diffusionlab.config import INPAINTING_CONFIG, BATCH_CONFIG
             except ImportError as e:
                 print(f"[DEBUG] ImportError in AI mode: {e}")
                 return jsonify({'error': 'AI mode is not available. Please ensure diffusionlab/tasks/storyboard.py and dependencies are present.'}), 500
-            if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting' or gen_type == 'prompt-chaining':
-                print(f"[DEBUG] AI {'Prompt Chaining' if gen_type == 'prompt-chaining' else 'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
+            if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting' or gen_type == 'prompt-chaining' or gen_type == 'batch':
+                print(f"[DEBUG] AI {'Batch Generation' if gen_type == 'batch' else 'Prompt Chaining' if gen_type == 'prompt-chaining' else 'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
                 # Generate a single AI image
                 scene = prompt
                 style_preset = STYLE_PRESETS.get(style, STYLE_PRESETS["cinematic"])
@@ -585,6 +586,70 @@ def generate_storyboard():
                         'evolutionStrength': evolution_strength,
                         'layout': layout
                     })
+                elif gen_type == 'batch' and batch_data:
+                    print(f"[DEBUG] AI Batch Generation mode")
+                    # Generate multiple variations of the same prompt
+                    batch_count = batch_data.get('count', BATCH_CONFIG["default_variations"])
+                    batch_layout = batch_data.get('layout', BATCH_CONFIG["default_layout"])
+                    variation_strength = batch_data.get('variationStrength', 0.5)
+                    
+                    # Validate batch count
+                    max_variations = BATCH_CONFIG["max_variations_demo"] if mode == 'demo' else BATCH_CONFIG["max_variations"]
+                    batch_count = min(max(batch_count, BATCH_CONFIG["min_variations"]), max_variations)
+                    
+                    print(f"[DEBUG] Generating {batch_count} variations with layout={batch_layout}, variation_strength={variation_strength}")
+                    
+                    images = []
+                    captions = []
+                    style_preset = STYLE_PRESETS.get(style, STYLE_PRESETS["cinematic"])
+                    negative_prompt = style_preset["negative_prompt"]
+                    
+                    # Add style suffix to the prompt
+                    full_prompt = f"{scene}, {style_preset['prompt_suffix']}"
+                    
+                    for i in range(batch_count):
+                        print(f"[DEBUG] Generating batch variation {i+1}/{batch_count}")
+                        
+                        # Vary the guidance scale and inference steps for diversity
+                        guidance_variation = IMAGE_CONFIG["guidance_scale"] + (variation_strength - 0.5) * 2
+                        step_variation = max(20, IMAGE_CONFIG["num_inference_steps"] + int((variation_strength - 0.5) * 10))
+                        
+                        image = pipe(
+                            full_prompt,
+                            negative_prompt=negative_prompt,
+                            num_inference_steps=step_variation,
+                            guidance_scale=guidance_variation,
+                            width=IMAGE_CONFIG["width"],
+                            height=IMAGE_CONFIG["height"]
+                        ).images[0]
+                        
+                        caption = f"Variation {i+1}: {scene[:50]}..."
+                        images.append(image)
+                        captions.append(caption)
+                    
+                    # Create batch layout
+                    storyboard = create_storyboard_layout(images, captions)
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    filename = f"batch_{timestamp}.png"
+                    filepath = os.path.join(get_storyboards_dir(), filename)
+                    storyboard.save(filepath)
+                    buffer = io.BytesIO()
+                    storyboard.save(buffer, format='PNG')
+                    buffer.seek(0)
+                    img_base64 = base64.b64encode(buffer.getvalue()).decode()
+                    return jsonify({
+                        'success': True,
+                        'image': img_base64,
+                        'filename': filename,
+                        'captions': captions,
+                        'prompt': prompt,
+                        'style': style,
+                        'mode': mode,
+                        'batch': True,
+                        'batchCount': batch_count,
+                        'layout': batch_layout,
+                        'variationStrength': variation_strength
+                    })
                 else:
                     # Generate image using text-to-image
                     image = pipe(
@@ -656,8 +721,8 @@ def generate_storyboard():
                 })
         else:
             print("[DEBUG] Entering Demo mode.")
-            if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting' or gen_type == 'prompt-chaining':
-                print(f"[DEBUG] Demo {'Prompt Chaining' if gen_type == 'prompt-chaining' else 'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
+            if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting' or gen_type == 'prompt-chaining' or gen_type == 'batch':
+                print(f"[DEBUG] Demo {'Batch Generation' if gen_type == 'batch' else 'Prompt Chaining' if gen_type == 'prompt-chaining' else 'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
                 if inpainting_mode and inpainting_image_path and mask_data:
                     print(f"[DEBUG] Demo Inpainting mode")
                     # Load the input image and create a demo inpainting
@@ -752,6 +817,62 @@ def generate_storyboard():
                         'promptChain': True,
                         'evolutionStrength': evolution_strength,
                         'layout': layout
+                    })
+                elif gen_type == 'batch' and batch_data:
+                    print(f"[DEBUG] Demo Batch Generation mode")
+                    # Create demo batch generation storyboard
+                    batch_count = batch_data.get('count', BATCH_CONFIG["default_variations"])
+                    batch_layout = batch_data.get('layout', BATCH_CONFIG["default_layout"])
+                    variation_strength = batch_data.get('variationStrength', 0.5)
+                    
+                    # Validate batch count
+                    max_variations = BATCH_CONFIG["max_variations_demo"] if mode == 'demo' else BATCH_CONFIG["max_variations"]
+                    batch_count = min(max(batch_count, BATCH_CONFIG["min_variations"]), max_variations)
+                    
+                    print(f"[DEBUG] Creating demo batch with {batch_count} variations")
+                    images = []
+                    captions = []
+                    
+                    for i in range(batch_count):
+                        # Create demo image for each variation
+                        demo_image = create_demo_image(prompt, style, i + 1)
+                        
+                        # Add batch generation indicator
+                        draw = ImageDraw.Draw(demo_image)
+                        try:
+                            font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 20)
+                        except:
+                            font = ImageFont.load_default()
+                        
+                        draw.text((10, 10), f"Demo Batch - Variation {i+1}", fill='yellow', font=font)
+                        draw.text((10, 35), f"Variation Strength: {variation_strength}", fill='cyan', font=font)
+                        draw.text((10, 60), f"Layout: {batch_layout}", fill='cyan', font=font)
+                        
+                        images.append(demo_image)
+                        captions.append(f"Variation {i+1}: {prompt[:50]}...")
+                    
+                    # Create storyboard layout for the batch
+                    storyboard = create_storyboard_layout(images, captions)
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    filename = f"demo_batch_{timestamp}.png"
+                    filepath = os.path.join(get_storyboards_dir(), filename)
+                    storyboard.save(filepath)
+                    buffer = io.BytesIO()
+                    storyboard.save(buffer, format='PNG')
+                    buffer.seek(0)
+                    img_base64 = base64.b64encode(buffer.getvalue()).decode()
+                    return jsonify({
+                        'success': True,
+                        'image': img_base64,
+                        'filename': filename,
+                        'captions': captions,
+                        'prompt': prompt,
+                        'style': style,
+                        'mode': mode,
+                        'batch': True,
+                        'batchCount': batch_count,
+                        'layout': batch_layout,
+                        'variationStrength': variation_strength
                     })
                 else:
                     image = create_demo_image(prompt, style, 1)

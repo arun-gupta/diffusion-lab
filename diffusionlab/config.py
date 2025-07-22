@@ -20,6 +20,19 @@ IMAGE_CONFIG = {
     "num_images_per_prompt": 1
 }
 
+# Batch Generation Settings
+BATCH_CONFIG = {
+    "max_variations": 8,  # Maximum number of variations to generate
+    "default_variations": 4,  # Default number of variations
+    "min_variations": 2,  # Minimum number of variations
+    "max_variations_demo": 6,  # Maximum for demo mode (faster)
+    "layout_options": ["grid", "horizontal", "vertical"],  # Layout options for batch results
+    "default_layout": "grid",  # Default layout for batch results
+    "seed_variation": True,  # Use different seeds for each variation
+    "guidance_variation": 0.5,  # Variation in guidance scale between images
+    "step_variation": 2  # Variation in inference steps between images
+}
+
 # Text Generation Settings
 TEXT_CONFIG = {
     "max_new_tokens": 50,

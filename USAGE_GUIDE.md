@@ -4,6 +4,7 @@ Detailed instructions for using all features of Diffusion Lab.
 
 ## Table of Contents
 - [Web Application Usage](#web-application-usage)
+- [Batch Generation Guide](#batch-generation-guide)
 - [Image-to-Image (img2img) Guide](#image-to-image-img2img-guide)
 - [Inpainting Guide](#inpainting-guide)
 - [Prompt Chaining Guide](#prompt-chaining-guide)
@@ -14,7 +15,7 @@ Detailed instructions for using all features of Diffusion Lab.
 
 ### Getting Started
 1. Open your browser and go to `http://localhost:5001`
-2. Select your desired mode: **Storyboard**, **Single-Image Art**, **Image-to-Image**, or **Inpainting**
+2. Select your desired mode: **Storyboard**, **Single-Image Art**, **Batch Generation**, **Image-to-Image**, or **Inpainting**
 3. Use the Demo/AI toggle to choose between fast demo mode and full AI mode
 4. Enter your scene description or art prompt in the text box
 5. Choose your preferred style from the dropdown
@@ -22,6 +23,59 @@ Detailed instructions for using all features of Diffusion Lab.
 7. Download the PNG file or view the results
 
 **Note:** Generated images are saved locally in the `static/storyboards/` directory.
+
+## Batch Generation Guide
+
+### What is Batch Generation?
+Batch Generation creates multiple variations of the same prompt, allowing you to explore creative diversity and choose the best result. It's perfect for finding the perfect interpretation of your idea.
+
+### Step-by-Step Instructions
+
+1. **Select Batch Generation Mode**
+   - Choose "Batch Generation (Multiple Variations)" from the Generation Type dropdown
+   - The batch generation interface will automatically appear
+
+2. **Configure Your Batch Settings**
+   - **Number of Variations**: Choose how many variations to generate (2-8)
+   - **Layout**: Select how to arrange the results (Grid, Horizontal, Vertical)
+   - **Variation Strength**: Control how different the variations are (0.1-1.0)
+
+3. **Enter Your Prompt**
+   - Write a descriptive prompt for your scene
+   - The same prompt will be used for all variations with slight parameter adjustments
+
+4. **Choose Your Style**
+   - Select from available styles (Cinematic, Anime, Photorealistic, etc.)
+   - The style will be applied consistently across all variations
+
+5. **Generate Your Variations**
+   - Click "Generate" to create your batch
+   - Wait for processing (faster in Demo mode, slower in AI mode)
+   - Download your batch results when complete
+
+### Tips for Best Results
+
+- **Clear Prompts**: Use detailed, specific prompts for better variation quality
+- **Style Consistency**: Choose a style that matches your creative vision
+- **Variation Strength**: Use lower values (0.1-0.3) for subtle variations, higher values (0.7-1.0) for dramatic differences
+- **Batch Size**: Start with 4 variations for a good balance of options and generation time
+- **Layout Choice**: Grid layout works well for comparing variations, horizontal/vertical for sequential viewing
+
+### Common Use Cases
+
+- **Concept Exploration**: Generate multiple interpretations of a character or scene
+- **Style Testing**: See how different parameters affect the same prompt
+- **Creative Selection**: Create a pool of options to choose the best result
+- **Iterative Design**: Use variations as starting points for further refinement
+- **Client Presentations**: Show multiple options to stakeholders
+
+### Quick Reference
+
+| Variation Count | Generation Time | Best For |
+|-----------------|-----------------|----------|
+| 2-3 | Fast | Quick exploration |
+| 4-6 | Medium | Balanced options |
+| 7-8 | Slow | Comprehensive exploration |
 
 ## Image-to-Image (img2img) Guide
 

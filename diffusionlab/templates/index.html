@@ -31,6 +31,7 @@
                                 <select class="form-select" id="generationMode">
                                     <option value="storyboard">Storyboard (5 panels)</option>
                                     <option value="single">Single-Image Art</option>
+                                    <option value="batch">Batch Generation (Multiple Variations)</option>
                                     <option value="img2img">Image-to-Image</option>
                                     <option value="inpainting">Inpainting (Content-aware Fill)</option>
                                     <option value="prompt-chaining">Prompt Chaining (Story Evolution)</option>
@@ -219,6 +220,40 @@
                                 </div>
                             </div>
 
+                            <!-- Batch Generation Section -->
+                            <div class="mb-3" id="batchSection" style="display: none;">
+                                <label class="form-label">Batch Generation Settings:</label>
+                                <div class="form-text mb-2">Generate multiple variations of the same prompt to explore creative diversity.</div>
+                                
+                                <div class="mb-3">
+                                    <label for="batchCount" class="form-label">Number of Variations: <span id="batchCountValue">4</span></label>
+                                    <input type="range" class="form-range" id="batchCount" min="2" max="8" step="1" value="4">
+                                    <div class="form-text">
+                                        <small>Generate 2-8 variations of your prompt</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="batchLayout" class="form-label">Layout:</label>
+                                    <select class="form-select" id="batchLayout">
+                                        <option value="grid">Grid (2x2, 2x3, 2x4)</option>
+                                        <option value="horizontal">Horizontal (side by side)</option>
+                                        <option value="vertical">Vertical (stacked)</option>
+                                    </select>
+                                    <div class="form-text">
+                                        <small>How to arrange the generated variations</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="variationStrength" class="form-label">Variation Strength: <span id="variationStrengthValue">0.5</span></label>
+                                    <input type="range" class="form-range" id="variationStrength" min="0.1" max="1.0" step="0.1" value="0.5">
+                                    <div class="form-text">
+                                        <small>0.1 = Similar variations, 1.0 = Very different variations</small>
+                                    </div>
+                                </div>
+                            </div>
+
                             <button type="submit" class="btn btn-primary btn-lg w-100" id="generateBtn">
                                 <i class="fas fa-magic"></i> Generate
                             </button>
@@ -248,6 +283,11 @@
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link" id="inpainting-tab" data-bs-toggle="tab" data-bs-target="#inpainting-examples" type="button" role="tab">
                                         <i class="fas fa-magic"></i> Inpainting
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch-examples" type="button" role="tab">
+                                        <i class="fas fa-layer-group"></i> Batch
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
@@ -351,6 +391,32 @@
                                         <button class="list-group-item list-group-item-action example-prompt" 
                                                 data-prompt="A serene lake with mountain reflections">
                                             🏔️ Fill with: Mountain lake
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Batch Generation Examples -->
+                                <div class="tab-pane fade" id="batch-examples" role="tabpanel">
+                                    <div class="list-group list-group-flush mt-2">
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A futuristic cityscape with flying cars and neon lights">
+                                            🌃 Futuristic Cityscape Variations
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A magical forest with glowing mushrooms and fairy lights">
+                                            🌲 Magical Forest Variations
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A steampunk airship floating through clouds">
+                                            🚁 Steampunk Airship Variations
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A cyberpunk warrior in a neon-lit alley">
+                                            ⚡ Cyberpunk Warrior Variations
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A serene mountain landscape at sunset">
+                                            🏔️ Mountain Landscape Variations
                                         </button>
                                     </div>
                                 </div>

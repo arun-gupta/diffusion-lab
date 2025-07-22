@@ -81,6 +81,15 @@ class StoryboardGenerator {
             document.getElementById('strengthValue').textContent = e.target.value;
         });
 
+        // Batch generation functionality
+        document.getElementById('batchCount').addEventListener('input', (e) => {
+            document.getElementById('batchCountValue').textContent = e.target.value;
+        });
+
+        document.getElementById('variationStrength').addEventListener('input', (e) => {
+            document.getElementById('variationStrengthValue').textContent = e.target.value;
+        });
+
         // Inpainting functionality
         document.getElementById('inpaintingImage').addEventListener('change', (e) => {
             this.handleInpaintingImageUpload(e);
@@ -169,6 +178,7 @@ class StoryboardGenerator {
         document.getElementById('img2imgSection').style.display = 'none';
         document.getElementById('inpaintingSection').style.display = 'none';
         document.getElementById('promptChainingSection').style.display = 'none';
+        document.getElementById('batchSection').style.display = 'none';
         document.getElementById('mainPromptSection').style.display = 'block';
         
         if (genType === 'single') {
@@ -197,6 +207,14 @@ class StoryboardGenerator {
                 document.getElementById('inpaintingPreview').style.display = 'none';
                 document.getElementById('inpaintingCanvasContainer').style.display = 'none';
             }
+        } else if (genType === 'batch') {
+            document.getElementById('captionsCard').classList.add('d-none');
+            document.getElementById('singleImageContainer').classList.add('d-none');
+            document.getElementById('storyboardContainer').classList.remove('d-none');
+            document.getElementById('batchSection').style.display = 'block';
+            // Clear any uploaded images when switching to batch mode
+            this.removeUploadedImage();
+            this.removeInpaintingImage();
         } else if (genType === 'prompt-chaining') {
             document.getElementById('captionsCard').classList.add('d-none');
             document.getElementById('singleImageContainer').classList.add('d-none');
@@ -234,6 +252,7 @@ class StoryboardGenerator {
             const defaultMessage = genType === 'img2img' ? 'Ready to transform image' :
                                  genType === 'inpainting' ? 'Ready to fill masked areas' :
                                  genType === 'prompt-chaining' ? 'Ready to create story evolution' :
+                                 genType === 'batch' ? 'Ready to generate variations' :
                                  genType === 'single' ? 'Ready to generate art' :
                                  'Ready to generate storyboard';
             statusElement.textContent = defaultMessage;
@@ -246,6 +265,7 @@ class StoryboardGenerator {
         // Get all example prompt tabs
         const storyboardTab = document.getElementById('storyboard-tab');
         const singleTab = document.getElementById('single-tab');
+        const batchTab = document.getElementById('batch-tab');
         const img2imgTab = document.getElementById('img2img-tab');
         const inpaintingTab = document.getElementById('inpainting-tab');
         const promptChainingTab = document.getElementById('prompt-chaining-tab');
@@ -253,12 +273,13 @@ class StoryboardGenerator {
         // Get all example prompt tab panes
         const storyboardExamples = document.getElementById('storyboard-examples');
         const singleExamples = document.getElementById('single-examples');
+        const batchExamples = document.getElementById('batch-examples');
         const img2imgExamples = document.getElementById('img2img-examples');
         const inpaintingExamples = document.getElementById('inpainting-examples');
         const promptChainingExamples = document.getElementById('prompt-chaining-examples');
         
         // Reset all tabs and panes to default state
-        [storyboardTab, singleTab, img2imgTab, inpaintingTab, promptChainingTab].forEach(tab => {
+        [storyboardTab, singleTab, batchTab, img2imgTab, inpaintingTab, promptChainingTab].forEach(tab => {
             if (tab) {
                 tab.classList.remove('disabled');
                 tab.style.opacity = '1';
@@ -281,6 +302,7 @@ class StoryboardGenerator {
         } else if (genType === 'single') {
             // Enable only single image examples
             this.disableExampleTab(storyboardTab, 'Storyboard');
+            this.disableExampleTab(batchTab, 'Batch Generation');
             this.disableExampleTab(img2imgTab, 'Image-to-Image');
             this.disableExampleTab(inpaintingTab, 'Inpainting');
             this.disableExampleTab(promptChainingTab, 'Prompt Chaining');
@@ -289,10 +311,23 @@ class StoryboardGenerator {
             if (singleTab && !singleTab.classList.contains('active')) {
                 singleTab.click();
             }
+        } else if (genType === 'batch') {
+            // Enable only batch generation examples
+            this.disableExampleTab(storyboardTab, 'Storyboard');
+            this.disableExampleTab(singleTab, 'Single-Image Art');
+            this.disableExampleTab(img2imgTab, 'Image-to-Image');
+            this.disableExampleTab(inpaintingTab, 'Inpainting');
+            this.disableExampleTab(promptChainingTab, 'Prompt Chaining');
+            
+            // Show batch examples by default
+            if (batchTab && !batchTab.classList.contains('active')) {
+                batchTab.click();
+            }
         } else if (genType === 'img2img') {
             // Enable only img2img examples
             this.disableExampleTab(storyboardTab, 'Storyboard');
             this.disableExampleTab(singleTab, 'Single-Image Art');
+            this.disableExampleTab(batchTab, 'Batch Generation');
             this.disableExampleTab(inpaintingTab, 'Inpainting');
             this.disableExampleTab(promptChainingTab, 'Prompt Chaining');
             
@@ -304,6 +339,7 @@ class StoryboardGenerator {
             // Enable only inpainting examples
             this.disableExampleTab(storyboardTab, 'Storyboard');
             this.disableExampleTab(singleTab, 'Single-Image Art');
+            this.disableExampleTab(batchTab, 'Batch Generation');
             this.disableExampleTab(img2imgTab, 'Image-to-Image');
             this.disableExampleTab(promptChainingTab, 'Prompt Chaining');
             
@@ -315,6 +351,7 @@ class StoryboardGenerator {
             // Enable only prompt chaining examples
             this.disableExampleTab(storyboardTab, 'Storyboard');
             this.disableExampleTab(singleTab, 'Single-Image Art');
+            this.disableExampleTab(batchTab, 'Batch Generation');
             this.disableExampleTab(img2imgTab, 'Image-to-Image');
             this.disableExampleTab(inpaintingTab, 'Inpainting');
             
@@ -349,6 +386,7 @@ class StoryboardGenerator {
             const modeNames = {
                 'storyboard': 'Storyboard',
                 'single': 'Single-Image Art',
+                'batch': 'Batch Generation',
                 'img2img': 'Image-to-Image',
                 'inpainting': 'Inpainting',
                 'prompt-chaining': 'Story Evolution'
@@ -363,6 +401,8 @@ class StoryboardGenerator {
                 indicator.classList.add('bg-primary');
             } else if (genType === 'single') {
                 indicator.classList.add('bg-success');
+            } else if (genType === 'batch') {
+                indicator.classList.add('bg-secondary');
             } else if (genType === 'img2img') {
                 indicator.classList.add('bg-info');
             } else if (genType === 'inpainting') {
@@ -419,6 +459,18 @@ class StoryboardGenerator {
                 return;
             }
         }
+        
+        // Additional validation for batch generation mode
+        if (genType === 'batch') {
+            if (!prompt) {
+                this.updateStatus('Please enter a scene description for batch generation', 'error');
+                return;
+            }
+            if (prompt.length < 10) {
+                this.updateStatus('Scene description should be at least 10 characters for batch generation', 'error');
+                return;
+            }
+        }
 
         // Show loading state
         if (mode === 'ai') {
@@ -430,6 +482,7 @@ class StoryboardGenerator {
         const statusMessage = genType === 'img2img' ? 'Transforming image...' : 
                              genType === 'inpainting' ? 'Filling masked areas...' :
                              genType === 'prompt-chaining' ? 'Creating story evolution...' :
+                             genType === 'batch' ? 'Generating variations...' :
                              genType === 'single' ? 'Generating art...' : 
                              'Generating storyboard...';
         this.updateStatus(statusMessage, 'info');
@@ -464,6 +517,20 @@ class StoryboardGenerator {
                     layout: chainLayout
                 };
             }
+            
+            // Get batch generation data
+            let batchData = null;
+            if (genType === 'batch') {
+                const batchCount = parseInt(document.getElementById('batchCount').value);
+                const batchLayout = document.getElementById('batchLayout').value;
+                const variationStrength = parseFloat(document.getElementById('variationStrength').value);
+                
+                batchData = {
+                    count: batchCount,
+                    layout: batchLayout,
+                    variationStrength: variationStrength
+                };
+            }
 
             const response = await fetch('/generate', {
                 method: 'POST',
@@ -481,7 +548,8 @@ class StoryboardGenerator {
                     inpaintingImagePath: this.inpaintingImagePath,
                     maskData: maskData,
                     strength: strength,
-                    promptChain: promptChainData
+                    promptChain: promptChainData,
+                    batch: batchData
                 })
             });
 
@@ -494,7 +562,7 @@ class StoryboardGenerator {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                if (genType === 'single' || genType === 'img2img' || genType === 'inpainting' || genType === 'prompt-chaining') {
+                if (genType === 'single' || genType === 'img2img' || genType === 'inpainting' || genType === 'prompt-chaining' || genType === 'batch') {
                     this.displaySingleImage(data);
                 } else {
                     this.displayStoryboard(data);
