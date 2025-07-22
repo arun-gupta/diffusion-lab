@@ -398,6 +398,7 @@ def generate_storyboard():
             print("[DEBUG] Entering Full AI mode.")
             try:
                 from diffusionlab.tasks.storyboard import generate_scene_variations, generate_caption, pipe, inpaint_pipe, STYLE_PRESETS, IMAGE_CONFIG
+                from diffusionlab.config import INPAINTING_CONFIG
             except ImportError as e:
                 print(f"[DEBUG] ImportError in AI mode: {e}")
                 return jsonify({'error': 'AI mode is not available. Please ensure diffusionlab/tasks/storyboard.py and dependencies are present.'}), 500
@@ -508,14 +509,24 @@ def generate_storyboard():
                     input_image = Image.open(input_image_path).convert('RGB')
                     input_image = resize_image(input_image)
                     
-                    # Generate image using img2img
-                    image = pipe(
-                        scene,
+                    # Use the inpainting pipeline for img2img by creating a full mask
+                    # This gives us proper img2img functionality
+                    width, height = IMAGE_CONFIG["width"], IMAGE_CONFIG["height"]
+                    
+                    # Create a full mask (all white = inpaint everything)
+                    mask = Image.new('L', (width, height), 255)
+                    
+                    # Use the inpainting pipeline for img2img
+                    # Use fewer inference steps to avoid index out of bounds error
+                    num_steps = min(20, INPAINTING_CONFIG["num_inference_steps"])
+                    image = inpaint_pipe(
+                        prompt=scene,
                         image=input_image,
-                        strength=strength,
+                        mask_image=mask,
                         negative_prompt=negative_prompt,
-                        num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
-                        guidance_scale=IMAGE_CONFIG["guidance_scale"]
+                        num_inference_steps=num_steps,
+                        guidance_scale=INPAINTING_CONFIG["guidance_scale"],
+                        strength=strength  # This controls how much to change
                     ).images[0]
                 elif gen_type == 'prompt-chaining' and prompt_chain_data:
                     print(f"[DEBUG] AI Prompt Chaining mode")
