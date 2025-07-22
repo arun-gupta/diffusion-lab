@@ -280,6 +280,52 @@ footer {
     padding: 0.5rem;
 }
 
+/* Inpainting Canvas */
+#inpaintingCanvas {
+    display: block;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+#inpaintingCanvas:focus {
+    outline: none;
+}
+
+/* Canvas Tools */
+.btn-group .btn.active {
+    background-color: #667eea;
+    border-color: #667eea;
+    color: white;
+}
+
+.btn-group .btn:not(.active) {
+    background-color: transparent;
+    border-color: #dee2e6;
+    color: #6c757d;
+}
+
+.btn-group .btn:hover:not(.active) {
+    background-color: #e9ecef;
+    border-color: #adb5bd;
+}
+
+/* Canvas Container */
+#inpaintingCanvasContainer {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Mask Preview */
+.mask-preview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
     width: 8px;

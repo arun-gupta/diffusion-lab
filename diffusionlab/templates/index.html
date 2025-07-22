@@ -32,8 +32,9 @@
                                     <option value="storyboard">Storyboard (5 panels)</option>
                                     <option value="single">Single-Image Art</option>
                                     <option value="img2img">Image-to-Image</option>
+                                    <option value="inpainting">Inpainting (Content-aware Fill)</option>
                                 </select>
-                                <div class="form-text">Choose to generate a storyboard, single art piece, or transform an uploaded image.</div>
+                                <div class="form-text">Choose to generate a storyboard, single art piece, transform an image, or fill masked areas.</div>
                             </div>
 
                             <div class="mb-3">
@@ -93,6 +94,59 @@
                                 </div>
                             </div>
 
+                            <!-- Inpainting Section -->
+                            <div class="mb-3" id="inpaintingSection" style="display: none;">
+                                <label for="inpaintingImage" class="form-label">Input Image (for Inpainting):</label>
+                                <input type="file" class="form-control" id="inpaintingImage" accept="image/*">
+                                <div class="form-text">Upload an image and draw masks on areas you want to change or fill.</div>
+                                
+                                <div class="mt-3" id="inpaintingCanvasContainer" style="display: none;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0">Draw Mask:</h6>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-primary active" id="brushTool" data-tool="brush">
+                                                <i class="fas fa-paint-brush"></i> Brush
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary" id="eraserTool" data-tool="eraser">
+                                                <i class="fas fa-eraser"></i> Eraser
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="position-relative" style="border: 2px solid #dee2e6; border-radius: 8px; overflow: hidden;">
+                                        <canvas id="inpaintingCanvas" width="512" height="512" style="max-width: 100%; height: auto; cursor: crosshair;"></canvas>
+                                        <div class="position-absolute top-0 start-0 p-2">
+                                            <small class="text-white bg-dark bg-opacity-75 px-2 py-1 rounded">Draw red brush strokes on areas you want to change</small>
+                                        </div>
+                                        <div class="position-absolute top-0 end-0 p-2">
+                                            <small class="text-white bg-danger bg-opacity-75 px-2 py-1 rounded">Red = Masked Area</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-2 d-flex gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-warning" id="clearMask">
+                                            <i class="fas fa-trash"></i> Clear Mask
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-info" id="invertMask">
+                                            <i class="fas fa-exchange-alt"></i> Invert Mask
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-success" id="previewMask">
+                                            <i class="fas fa-eye"></i> Preview
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-info" id="testMask">
+                                            <i class="fas fa-vial"></i> Test Mask
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-2" id="inpaintingPreview" style="display: none;">
+                                    <img id="inpaintingPreviewImg" class="img-fluid rounded" style="max-height: 200px;">
+                                    <button type="button" class="btn btn-sm btn-outline-danger mt-1" id="removeInpaintingImage">
+                                        <i class="fas fa-times"></i> Remove Image
+                                    </button>
+                                </div>
+                            </div>
+
                             <button type="submit" class="btn btn-primary btn-lg w-100" id="generateBtn">
                                 <i class="fas fa-magic"></i> Generate
                             </button>
@@ -117,6 +171,11 @@
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link" id="img2img-tab" data-bs-toggle="tab" data-bs-target="#img2img-examples" type="button" role="tab">
                                         <i class="fas fa-exchange-alt"></i> Image-to-Image
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="inpainting-tab" data-bs-toggle="tab" data-bs-target="#inpainting-examples" type="button" role="tab">
+                                        <i class="fas fa-magic"></i> Inpainting
                                     </button>
                                 </li>
                             </ul>
@@ -189,6 +248,32 @@
                                         <button class="list-group-item list-group-item-action example-prompt" 
                                                 data-prompt="A watercolor painting with soft, dreamy colors and flowing brushstrokes">
                                             🎨 Style Transfer: Watercolor painting
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Inpainting Examples -->
+                                <div class="tab-pane fade" id="inpainting-examples" role="tabpanel">
+                                    <div class="list-group list-group-flush mt-2">
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A beautiful flower garden with colorful blooms">
+                                            🌸 Fill with: Flower garden
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A modern glass window with city skyline view">
+                                            🏢 Fill with: Modern window
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A cozy fireplace with crackling flames">
+                                            🔥 Fill with: Fireplace
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A vintage wooden door with ornate carvings">
+                                            🚪 Fill with: Vintage door
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A serene lake with mountain reflections">
+                                            🏔️ Fill with: Mountain lake
                                         </button>
                                     </div>
                                 </div>

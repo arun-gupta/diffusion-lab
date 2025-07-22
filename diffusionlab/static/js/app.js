@@ -6,6 +6,12 @@ class StoryboardGenerator {
         this._aiModal = null;
         this._aiCancelled = false;
         this.uploadedImagePath = null;
+        this.inpaintingImagePath = null;
+        this.canvas = null;
+        this.ctx = null;
+        this.isDrawing = false;
+        this.currentTool = 'brush';
+        this.brushSize = 20;
         this.init();
     }
 
@@ -71,6 +77,40 @@ class StoryboardGenerator {
         document.getElementById('strengthSlider').addEventListener('input', (e) => {
             document.getElementById('strengthValue').textContent = e.target.value;
         });
+
+        // Inpainting functionality
+        document.getElementById('inpaintingImage').addEventListener('change', (e) => {
+            this.handleInpaintingImageUpload(e);
+        });
+
+        document.getElementById('removeInpaintingImage').addEventListener('click', () => {
+            this.removeInpaintingImage();
+        });
+
+        // Canvas tools
+        document.getElementById('brushTool').addEventListener('click', () => {
+            this.setTool('brush');
+        });
+
+        document.getElementById('eraserTool').addEventListener('click', () => {
+            this.setTool('eraser');
+        });
+
+        document.getElementById('clearMask').addEventListener('click', () => {
+            this.clearMask();
+        });
+
+        document.getElementById('invertMask').addEventListener('click', () => {
+            this.invertMask();
+        });
+
+        document.getElementById('previewMask').addEventListener('click', () => {
+            this.previewMask();
+        });
+
+        document.getElementById('testMask').addEventListener('click', () => {
+            this.testMask();
+        });
     }
 
     updateStyleDescription() {
@@ -97,20 +137,33 @@ class StoryboardGenerator {
         const mode = this.getCurrentMode();
         const genType = document.getElementById('generationMode').value;
         
-        if (genType === 'single' || genType === 'img2img') {
+        // Hide all sections first
+        document.getElementById('img2imgSection').style.display = 'none';
+        document.getElementById('inpaintingSection').style.display = 'none';
+        
+        if (genType === 'single') {
             document.getElementById('captionsCard').classList.add('d-none');
             document.getElementById('singleImageContainer').classList.remove('d-none');
             document.getElementById('storyboardContainer').classList.add('d-none');
-            // Show img2img section for single image and img2img modes
             document.getElementById('img2imgSection').style.display = 'block';
+        } else if (genType === 'img2img') {
+            document.getElementById('captionsCard').classList.add('d-none');
+            document.getElementById('singleImageContainer').classList.remove('d-none');
+            document.getElementById('storyboardContainer').classList.add('d-none');
+            document.getElementById('img2imgSection').style.display = 'block';
+        } else if (genType === 'inpainting') {
+            document.getElementById('captionsCard').classList.add('d-none');
+            document.getElementById('singleImageContainer').classList.remove('d-none');
+            document.getElementById('storyboardContainer').classList.add('d-none');
+            document.getElementById('inpaintingSection').style.display = 'block';
         } else {
+            // Storyboard mode
             document.getElementById('captionsCard').classList.add('d-none');
             document.getElementById('singleImageContainer').classList.add('d-none');
             document.getElementById('storyboardContainer').classList.remove('d-none');
-            // Hide img2img section for storyboard mode
-            document.getElementById('img2imgSection').style.display = 'none';
-            // Clear any uploaded image when switching to storyboard mode
+            // Clear any uploaded images when switching to storyboard mode
             this.removeUploadedImage();
+            this.removeInpaintingImage();
         }
         
         // Update status message
@@ -123,6 +176,7 @@ class StoryboardGenerator {
         
         if (statusElement.className.includes('text-muted')) {
             const defaultMessage = genType === 'img2img' ? 'Ready to transform image' :
+                                 genType === 'inpainting' ? 'Ready to fill masked areas' :
                                  genType === 'single' ? 'Ready to generate art' :
                                  'Ready to generate storyboard';
             statusElement.textContent = defaultMessage;
@@ -157,6 +211,12 @@ class StoryboardGenerator {
             return;
         }
 
+        // Additional validation for inpainting mode
+        if (genType === 'inpainting' && !this.inpaintingImagePath) {
+            this.updateStatus('Please upload an input image for Inpainting mode', 'error');
+            return;
+        }
+
         // Show loading state
         if (mode === 'ai') {
             this._aiCancelled = false;
@@ -165,6 +225,7 @@ class StoryboardGenerator {
             this.showLoading();
         }
         const statusMessage = genType === 'img2img' ? 'Transforming image...' : 
+                             genType === 'inpainting' ? 'Filling masked areas...' :
                              genType === 'single' ? 'Generating art...' : 
                              'Generating storyboard...';
         this.updateStatus(statusMessage, 'info');
@@ -172,6 +233,15 @@ class StoryboardGenerator {
         try {
             const strength = parseFloat(document.getElementById('strengthSlider').value);
             const img2img = this.uploadedImagePath !== null;
+            const inpainting = this.inpaintingImagePath !== null;
+            
+            // Get mask data for inpainting
+            let maskData = null;
+            if (genType === 'inpainting' && this.canvas) {
+                maskData = this.canvas.toDataURL('image/png');
+                console.log('[DEBUG] Canvas mask data length:', maskData.length);
+                console.log('[DEBUG] Canvas mask data preview:', maskData.substring(0, 100) + '...');
+            }
             
             const response = await fetch('/generate', {
                 method: 'POST',
@@ -184,7 +254,10 @@ class StoryboardGenerator {
                     mode: mode,
                     genType: genType,
                     img2img: img2img,
+                    inpainting: inpainting,
                     inputImagePath: this.uploadedImagePath,
+                    inpaintingImagePath: this.inpaintingImagePath,
+                    maskData: maskData,
                     strength: strength
                 })
             });
@@ -198,7 +271,7 @@ class StoryboardGenerator {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                if (genType === 'single' || genType === 'img2img') {
+                if (genType === 'single' || genType === 'img2img' || genType === 'inpainting') {
                     this.displaySingleImage(data);
                 } else {
                     this.displayStoryboard(data);
@@ -357,6 +430,7 @@ class StoryboardGenerator {
             setTimeout(() => {
                 const genType = document.getElementById('generationMode').value;
                 const defaultMessage = genType === 'img2img' ? 'Ready to transform image' :
+                                     genType === 'inpainting' ? 'Ready to fill masked areas' :
                                      genType === 'single' ? 'Ready to generate art' :
                                      'Ready to generate storyboard';
                 statusElement.textContent = defaultMessage;
@@ -417,6 +491,9 @@ class StoryboardGenerator {
         if (genType === 'img2img') {
             loadingTitle.textContent = 'Transforming Your Image';
             loadingDescription.textContent = 'Applying AI transformation to your uploaded image...';
+        } else if (genType === 'inpainting') {
+            loadingTitle.textContent = 'Filling Masked Areas';
+            loadingDescription.textContent = 'Generating new content for the masked areas...';
         } else if (genType === 'single') {
             loadingTitle.textContent = 'Generating Your Art';
             loadingDescription.textContent = 'Creating a unique piece of art from your prompt...';
@@ -504,6 +581,346 @@ class StoryboardGenerator {
         document.getElementById('imagePreview').style.display = 'none';
         document.getElementById('previewImg').src = '';
         this.updateStatus('Image removed', 'info');
+    }
+
+    // Inpainting methods
+    async handleInpaintingImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            this.updateStatus('Please select a valid image file (JPEG, PNG, GIF, BMP, WebP)', 'error');
+            event.target.value = '';
+            return;
+        }
+
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            this.updateStatus('Image file too large. Please select an image smaller than 10MB', 'error');
+            event.target.value = '';
+            return;
+        }
+
+        try {
+            this.updateStatus('Uploading image for inpainting...', 'info');
+            
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                this.inpaintingImagePath = data.filepath;
+                this.showInpaintingCanvas(file);
+                this.updateStatus('Image uploaded successfully! Draw masks on areas you want to change.', 'success');
+            } else {
+                this.updateStatus(data.error || 'Failed to upload image', 'error');
+                event.target.value = '';
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            this.updateStatus('Failed to upload image', 'error');
+            event.target.value = '';
+        }
+    }
+
+    showInpaintingCanvas(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById('inpaintingPreviewImg').src = e.target.result;
+            document.getElementById('inpaintingPreview').style.display = 'block';
+            document.getElementById('inpaintingCanvasContainer').style.display = 'block';
+            
+            // Initialize canvas
+            this.initCanvas(e.target.result);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    initCanvas(imageSrc) {
+        this.canvas = document.getElementById('inpaintingCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        
+        // Load image and draw it on canvas as background
+        const img = new Image();
+        img.onload = () => {
+            // Clear canvas and draw image as background
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
+            
+            // Set up drawing events
+            this.setupCanvasEvents();
+            
+            console.log('[DEBUG] Canvas initialized with image background');
+            console.log('[DEBUG] Canvas size:', this.canvas.width, 'x', this.canvas.height);
+            console.log('[DEBUG] Image size:', img.naturalWidth, 'x', img.naturalHeight);
+        };
+        img.src = imageSrc;
+    }
+
+    setupCanvasEvents() {
+        this.canvas.addEventListener('mousedown', this.startDrawing.bind(this));
+        this.canvas.addEventListener('mousemove', this.draw.bind(this));
+        this.canvas.addEventListener('mouseup', this.stopDrawing.bind(this));
+        this.canvas.addEventListener('mouseout', this.stopDrawing.bind(this));
+        
+        // Touch events for mobile
+        this.canvas.addEventListener('touchstart', this.handleTouch.bind(this));
+        this.canvas.addEventListener('touchmove', this.handleTouch.bind(this));
+        this.canvas.addEventListener('touchend', this.stopDrawing.bind(this));
+    }
+
+    startDrawing(e) {
+        this.isDrawing = true;
+        this.draw(e);
+    }
+
+    draw(e) {
+        if (!this.isDrawing) return;
+        
+        const rect = this.canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) * (this.canvas.width / rect.width);
+        const y = (e.clientY - rect.top) * (this.canvas.height / rect.height);
+        
+        this.ctx.lineWidth = this.brushSize;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+        
+        if (this.currentTool === 'brush') {
+            this.ctx.globalCompositeOperation = 'source-over';
+            // Use pure red with full opacity for better mask detection
+            this.ctx.strokeStyle = 'rgb(255, 0, 0)';  // Pure red, no transparency
+            console.log('[DEBUG] Drawing red brush stroke at:', x, y);
+        } else {
+            this.ctx.globalCompositeOperation = 'destination-out';
+            console.log('[DEBUG] Erasing at:', x, y);
+        }
+        
+        this.ctx.lineTo(x, y);
+        this.ctx.stroke();
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, y);
+    }
+
+    stopDrawing() {
+        this.isDrawing = false;
+        this.ctx.beginPath();
+    }
+
+    handleTouch(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
+                                        e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        this.canvas.dispatchEvent(mouseEvent);
+    }
+
+    setTool(tool) {
+        this.currentTool = tool;
+        
+        // Update button states
+        document.getElementById('brushTool').classList.remove('active');
+        document.getElementById('eraserTool').classList.remove('active');
+        
+        if (tool === 'brush') {
+            document.getElementById('brushTool').classList.add('active');
+        } else {
+            document.getElementById('eraserTool').classList.add('active');
+        }
+    }
+
+    clearMask() {
+        if (this.ctx) {
+            // Clear the canvas and redraw the original image
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            
+            // Redraw the original image as background
+            const img = new Image();
+            img.onload = () => {
+                this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
+            };
+            img.src = document.getElementById('inpaintingPreviewImg').src;
+        }
+    }
+
+    invertMask() {
+        if (this.ctx) {
+            const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                // Invert the red channel (mask) - red channel is at index 0
+                data[i] = 255 - data[i];
+            }
+            
+            this.ctx.putImageData(imageData, 0, 0);
+        }
+    }
+
+    previewMask() {
+        if (this.canvas) {
+            // Create a preview by overlaying the mask on the original image
+            const previewCanvas = document.createElement('canvas');
+            previewCanvas.width = this.canvas.width;
+            previewCanvas.height = this.canvas.height;
+            const previewCtx = previewCanvas.getContext('2d');
+            
+            // Draw original image
+            const img = new Image();
+            img.onload = () => {
+                previewCtx.drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
+                
+                // Overlay mask
+                previewCtx.globalCompositeOperation = 'multiply';
+                previewCtx.drawImage(this.canvas, 0, 0);
+                
+                // Show preview
+                const previewUrl = previewCanvas.toDataURL();
+                const previewWindow = window.open();
+                previewWindow.document.write(`
+                    <html>
+                        <head><title>Mask Preview</title></head>
+                        <body style="margin:0;background:#333;display:flex;justify-content:center;align-items:center;min-height:100vh;">
+                            <img src="${previewUrl}" style="max-width:90%;max-height:90%;border:2px solid #fff;">
+                        </body>
+                    </html>
+                `);
+            };
+            img.src = document.getElementById('inpaintingPreviewImg').src;
+        }
+    }
+
+    removeInpaintingImage() {
+        this.inpaintingImagePath = null;
+        document.getElementById('inpaintingImage').value = '';
+        document.getElementById('inpaintingPreview').style.display = 'none';
+        document.getElementById('inpaintingPreviewImg').src = '';
+        document.getElementById('inpaintingCanvasContainer').style.display = 'none';
+        this.canvas = null;
+        this.ctx = null;
+        this.updateStatus('Inpainting image removed', 'info');
+    }
+
+    async testMask() {
+        if (!this.canvas) {
+            this.updateStatus('No canvas available for testing', 'error');
+            return;
+        }
+
+        try {
+            this.updateStatus('Testing mask processing...', 'info');
+            
+            const maskData = this.canvas.toDataURL('image/png');
+                            console.log('[DEBUG] Testing mask data length:', maskData.length);
+                console.log('[DEBUG] Canvas actual size:', this.canvas.width, 'x', this.canvas.height);
+                console.log('[DEBUG] Canvas display size:', this.canvas.offsetWidth, 'x', this.canvas.offsetHeight);
+            
+            const response = await fetch('/test-mask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    maskData: maskData
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                console.log('[DEBUG] Mask test successful:', data);
+                this.updateStatus(`Mask test successful! Size: ${data.mask_size[0]}x${data.mask_size[1]}, Mode: ${data.mask_mode}`, 'success');
+                
+                // Create and show a modal instead of popup
+                this.showMaskTestModal(data);
+            } else {
+                console.error('[DEBUG] Mask test failed:', data);
+                this.updateStatus(data.error || 'Mask test failed', 'error');
+            }
+        } catch (error) {
+            console.error('[DEBUG] Mask test error:', error);
+            this.updateStatus('Error testing mask', 'error');
+        }
+    }
+
+    showMaskTestModal(data) {
+        // Remove existing modal if any
+        const existingModal = document.getElementById('maskTestModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Create modal HTML
+        const modalHTML = `
+            <div class="modal fade" id="maskTestModal" tabindex="-1" aria-labelledby="maskTestModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="maskTestModalLabel">Mask Test Results</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Size:</strong> ${data.mask_size[0]}x${data.mask_size[1]}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Mode:</strong> ${data.mask_mode}
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Masked Pixels:</strong> ${data.masked_pixels} out of ${data.total_pixels}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Inpainting Pipeline:</strong> ${data.inpaint_available ? 'Available' : 'Not Available'}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Original Mask (White = Inpaint)</h6>
+                                    <img src="data:image/png;base64,${data.processed_mask}" class="img-fluid border rounded" alt="Original Mask">
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Inverted Mask (Black = Inpaint)</h6>
+                                    <img src="data:image/png;base64,${data.inverted_mask}" class="img-fluid border rounded" alt="Inverted Mask">
+                                </div>
+                            </div>
+                            <div class="alert alert-info mt-3">
+                                <strong>Note:</strong> Try both masks to see which one works better for inpainting.<br>
+                                If the entire image is being changed, the mask might be inverted.<br>
+                                <strong>Pipeline Type:</strong> ${data.inpaint_type}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('maskTestModal'));
+        modal.show();
+
+        // Clean up modal when hidden
+        document.getElementById('maskTestModal').addEventListener('hidden.bs.modal', function () {
+            this.remove();
+        });
     }
 }
 

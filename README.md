@@ -134,8 +134,9 @@ Examples include: main-ui.png, sample-storyboard.png, sample-art.png, sample-img
 ## How It Works
 
 1. **User Input:**
-   - The user enters a scene description or art prompt in the web UI and selects the desired mode (Storyboard, Single-Image Art, or Image-to-Image), style, and Demo/AI mode.
+   - The user enters a scene description or art prompt in the web UI and selects the desired mode (Storyboard, Single-Image Art, Image-to-Image, or Inpainting), style, and Demo/AI mode.
    - For Image-to-Image mode, the user uploads an input image and adjusts the transformation strength.
+   - For Inpainting mode, the user uploads an image, draws masks on areas to change, and describes what should fill those areas.
 2. **Request Sent to Backend:**
    - The frontend sends the input to the Flask backend via an AJAX request.
    - For img2img, the input image is uploaded separately and processed.
@@ -143,6 +144,7 @@ Examples include: main-ui.png, sample-storyboard.png, sample-art.png, sample-img
    - In Demo mode, the backend generates placeholder images and captions.
    - In AI mode, the backend uses Stable Diffusion XL (for images) and StableLM (for captions) to generate real, high-quality outputs based on the prompt and style.
    - For img2img, the AI model transforms the uploaded image according to the prompt and strength setting.
+   - For inpainting, the AI model fills masked areas with new content based on the prompt and surrounding context.
 4. **Output Generation:**
    - The backend assembles the images (and captions, if storyboard) into a single output image (storyboard or single art piece).
 5. **Result Displayed:**
@@ -160,15 +162,19 @@ User Input → [Frontend] → /generate → [Flask Backend]
 
 ### Web Application (Recommended)
 1. Open your browser and go to `http://localhost:5001`
-2. Select either **Storyboard** or **Single-Image Art** mode
+2. Select your desired mode: **Storyboard**, **Single-Image Art**, **Image-to-Image**, or **Inpainting**
 3. Use the Demo/AI toggle to choose between fast demo mode and full AI mode
 4. Enter your scene description or art prompt in the text box
 5. Choose your preferred style from the dropdown
 6. **For Image-to-Image mode:**
    - Upload an input image (sketch, photo, or concept)
    - Adjust the transformation strength slider (0.1 = keep original, 1.0 = complete transformation)
-7. Click "Generate"
-8. Download the PNG file or view the results
+7. **For Inpainting mode:**
+   - Upload an image to edit
+   - Draw masks on areas you want to change using the canvas tools
+   - Describe what should fill the masked areas
+8. Click "Generate"
+9. Download the PNG file or view the results
 
 **Note:** Generated images are saved locally in the `static/storyboards/` directory.
 
@@ -243,6 +249,87 @@ The Image-to-Image feature allows you to transform existing images using AI. Thi
 | Landscape | 0.6-0.9 | "A cyberpunk cityscape with neon lights" |
 | Character Design | 0.7-1.0 | "A professional character concept for a video game" |
 
+## Inpainting (Content-aware Fill) Usage Guide
+
+### What is Inpainting?
+Inpainting allows you to remove unwanted objects, fill gaps, or replace content in images by drawing masks on areas you want to change and describing what should fill those areas.
+
+### Step-by-Step Instructions
+
+1. **Select Inpainting Mode**
+   - Choose "Inpainting (Content-aware Fill)" from the Generation Type dropdown
+   - The inpainting interface will automatically appear
+
+2. **Upload Your Image**
+   - Click "Choose File" and select your image
+   - Supported formats: JPEG, PNG, GIF, BMP, WebP
+   - Maximum file size: 10MB
+   - The image will be displayed on a drawing canvas
+
+3. **Draw Your Mask**
+   - Use the **Brush tool** to mark areas you want to change (red overlay)
+   - Use the **Eraser tool** to remove parts of your mask
+   - Draw carefully around the edges of objects you want to remove or replace
+   - The mask should cover the entire area you want to change
+
+4. **Mask Tools**
+   - **Clear Mask**: Remove all masking and start over
+   - **Invert Mask**: Switch which areas are masked vs. preserved
+   - **Preview**: See how your mask looks before generating
+
+5. **Write Your Inpainting Prompt**
+   - Describe what should fill the masked areas
+   - Be specific about the content, style, and how it should blend
+   - Example: "A beautiful flower garden with colorful blooms"
+
+6. **Choose Your Style**
+   - Select from available styles (Cinematic, Anime, Photorealistic, etc.)
+   - The style will influence how the new content is generated
+
+7. **Generate and Download**
+   - Click "Generate" to start the inpainting process
+   - Wait for processing (faster in Demo mode, slower in AI mode)
+   - Download your inpainted image when complete
+
+### Tips for Best Results
+
+- **Precise Masking**: Draw masks carefully around object edges for better blending
+- **Contextual Prompts**: Describe content that fits naturally with the surrounding area
+- **Style Consistency**: Choose a style that matches the original image
+- **Iterative Process**: Start with small areas and refine your masks
+- **Background Awareness**: Consider what should be behind removed objects
+- **Mask Quality**: Use the red brush tool and draw thick, visible strokes for better detection
+- **Test Your Mask**: Use the "Test Mask" button to verify your mask is being detected correctly
+
+### Enhanced Mask Processing Features
+
+The inpainting system includes advanced mask detection and processing:
+
+- **Smart Detection**: Uses multiple criteria to detect brush strokes (red channel analysis, alpha validation)
+- **Noise Reduction**: Automatically removes small, isolated pixels that aren't part of brush strokes
+- **Adaptive Thresholds**: Automatically adjusts detection sensitivity based on mask coverage
+- **Morphological Operations**: Cleans up masks by filling holes and removing noise
+- **Debug Tools**: Test Mask button shows detailed information about mask detection
+- **Fallback Mechanisms**: Works with both original and inverted mask orientations
+
+### Common Use Cases
+
+- **Object Removal**: Remove unwanted people, objects, or blemishes from photos
+- **Background Replacement**: Change backgrounds while keeping the main subject
+- **Content Addition**: Add new elements like windows, doors, or decorations
+- **Art Restoration**: Fill in damaged or missing parts of artwork
+- **Creative Editing**: Replace objects with something completely different
+
+### Quick Reference
+
+| Use Case | Mask Strategy | Example Prompt |
+|----------|---------------|----------------|
+| Object Removal | Mask the object completely | "Natural background continuation" |
+| Background Change | Mask around the subject | "A modern office interior" |
+| Content Addition | Mask the area to fill | "A cozy fireplace with crackling flames" |
+| Art Restoration | Mask damaged areas | "Original artwork continuation" |
+| Creative Replacement | Mask the object to replace | "A vintage wooden door with ornate carvings" |
+
 ### Gradio Interface
 1. Open your browser and go to `http://localhost:7860`
 2. Enter your scene description in the text box
@@ -265,6 +352,13 @@ The Image-to-Image feature allows you to transform existing images using AI. Thi
 - **Concept Development**: Upload a rough doodle + "A polished character design for a sci-fi video game protagonist"
 - **Background Change**: Upload a person photo + "The same person standing in a cyberpunk cityscape at night"
 
+### Inpainting Examples
+- **Object Removal**: Mask an unwanted person + "Natural background continuation with trees and sky"
+- **Background Replacement**: Mask around a subject + "A modern glass window with city skyline view"
+- **Content Addition**: Mask a wall area + "A cozy fireplace with crackling flames and warm lighting"
+- **Art Restoration**: Mask damaged areas + "Original artwork continuation matching the existing style"
+- **Creative Replacement**: Mask an object + "A vintage wooden door with ornate carvings and brass handle"
+
 ## Technical Details
 
 ### Web Application
@@ -285,11 +379,19 @@ The Image-to-Image feature allows you to transform existing images using AI. Thi
 - CUDA-compatible GPU (recommended for faster generation)
 - 8GB+ RAM
 - Internet connection for model downloads
+- Key Dependencies:
+  - **PyTorch**: Deep learning framework
+  - **Diffusers**: Stable Diffusion models
+  - **Transformers**: Language models for captions
+  - **Flask**: Web framework
+  - **Pillow**: Image processing
+  - **NumPy**: Numerical computing
+  - **SciPy**: Advanced image processing (for mask operations)
 
 ## Planned Features
 
 - **✅ 1. Image-to-Image (img2img):** Transform sketches, photos, or rough concepts into polished art. *(Implemented)*
-- **2. Inpainting (Content-aware Fill):** Remove or replace parts of an image by masking them and describing what should go there.
+- **✅ 2. Inpainting (Content-aware Fill):** Remove or replace parts of an image by masking them and describing what should go there. *(Implemented)*
 - **3. Outpainting (Image Expansion):** Extend the borders of an image with new, contextually appropriate content.
 - **4. Style Transfer:** Apply the style of one image (e.g., a famous painting) to another image.
 - **5. Prompt Chaining / Story Evolution:** Generate a sequence of images that evolve based on a series of prompts.
@@ -386,6 +488,48 @@ diffusion-lab/
 **File Too Large**
 - **Symptom**: "Image file too large" error
 - **Solution**: Resize your image to under 10MB before uploading
+
+### Inpainting Specific Issues
+
+**Canvas Not Loading**
+- **Symptom**: Drawing canvas doesn't appear after uploading image
+- **Solution**: Refresh the page and try uploading again. Ensure JavaScript is enabled.
+
+**Mask Not Drawing**
+- **Symptom**: Can't draw on the canvas or mask doesn't appear
+- **Solution**: Check that you've selected the Brush tool (should be highlighted). Try refreshing the page.
+
+**Poor Inpainting Results**
+- **Symptom**: Generated content doesn't blend well or looks unrealistic
+- **Solution**: 
+  - Draw more precise masks around object edges
+  - Use more descriptive prompts that match the image context
+  - Try different styles that complement the original image
+  - Start with smaller areas and refine your masks
+  - Use the "Test Mask" button to verify your mask is being detected correctly
+  - Check the mask coverage percentage in the test results
+
+**Entire Image Being Changed Instead of Masked Areas**
+- **Symptom**: The whole image gets transformed instead of just the masked portions
+- **Solution**:
+  - Use the "Test Mask" button to check if your mask is being detected
+  - Ensure you're drawing with the red brush tool (not eraser)
+  - Try the inverted mask option if the original mask doesn't work
+  - Check that the inpainting pipeline is available in the test results
+  - Draw larger, more visible brush strokes for better detection
+
+**Mask Detection Issues**
+- **Symptom**: Mask not being detected or very low coverage percentage
+- **Solution**:
+  - Use pure red brush strokes (the system detects red channel)
+  - Draw thicker strokes for better detection
+  - Avoid very small, isolated brush strokes
+  - Check the debug information in the Test Mask results
+  - Try redrawing the mask with more coverage
+
+**Mask Preview Not Working**
+- **Symptom**: Preview button doesn't show mask overlay
+- **Solution**: Ensure you've drawn a mask first. Try clearing and redrawing the mask.
 
 **No Transformation Effect**
 - **Symptom**: Output looks identical to input

@@ -12,6 +12,7 @@ import base64
 from datetime import datetime
 import json
 from werkzeug.utils import secure_filename
+import numpy as np
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 app = Flask(
@@ -160,6 +161,137 @@ def resize_image(image, target_size=(512, 512)):
     
     return result
 
+def resize_image_for_inpainting(image, target_size=(512, 512)):
+    """Resize image to target size for inpainting (no padding, direct resize)"""
+    # Direct resize to target size without maintaining aspect ratio
+    # This ensures the image and mask are exactly the same size
+    return image.resize(target_size, Image.Resampling.LANCZOS)
+
+def process_mask_data(mask_data_url):
+    """Process base64 mask data and convert to PIL Image for inpainting"""
+    try:
+        # Remove data URL prefix
+        if mask_data_url.startswith('data:image/png;base64,'):
+            mask_data_url = mask_data_url.split(',')[1]
+        
+        # Decode base64 data
+        mask_bytes = base64.b64decode(mask_data_url)
+        
+        # Create PIL Image from bytes
+        mask_image = Image.open(io.BytesIO(mask_bytes))
+        
+        # Convert to RGBA if needed
+        if mask_image.mode != 'RGBA':
+            mask_image = mask_image.convert('RGBA')
+        
+        # Convert to numpy array
+        mask_array = np.array(mask_image)
+        
+        # Extract channels
+        red_channel = mask_array[:, :, 0]
+        green_channel = mask_array[:, :, 1]
+        blue_channel = mask_array[:, :, 2]
+        alpha_channel = mask_array[:, :, 3] if mask_array.shape[2] == 4 else np.full(red_channel.shape, 255)
+        
+        # More precise mask detection:
+        # 1. Red channel should be significantly higher than other channels
+        # 2. Red channel should be above a reasonable threshold
+        # 3. The difference between red and other channels should be significant
+        # 4. Alpha channel should be high (not transparent)
+        
+        # Calculate differences
+        red_green_diff = red_channel - green_channel
+        red_blue_diff = red_channel - blue_channel
+        
+        # Create more precise mask criteria
+        red_threshold = 80  # Minimum red value
+        diff_threshold = 30  # Minimum difference between red and other channels
+        alpha_threshold = 200  # Minimum alpha value
+        
+        # Create mask based on multiple criteria
+        red_brush_mask = (
+            (red_channel > red_threshold) &  # Red channel above threshold
+            (red_green_diff > diff_threshold) &  # Red significantly higher than green
+            (red_blue_diff > diff_threshold) &  # Red significantly higher than blue
+            (alpha_channel > alpha_threshold)  # Not transparent
+        )
+        
+        # Apply morphological operations to clean up the mask
+        try:
+            from scipy import ndimage
+            
+            # Remove small isolated pixels (noise)
+            red_brush_mask = ndimage.binary_opening(red_brush_mask, structure=np.ones((2, 2)))
+            
+            # Fill small holes
+            red_brush_mask = ndimage.binary_closing(red_brush_mask, structure=np.ones((3, 3)))
+            
+            print(f"[DEBUG] Applied morphological operations")
+        except ImportError:
+            print(f"[DEBUG] Scipy not available, skipping morphological operations")
+            # Simple alternative: remove very small isolated areas
+            try:
+                from scipy import ndimage as ndi
+                labeled, num_features = ndi.label(red_brush_mask)
+                for i in range(1, num_features + 1):
+                    component_size = np.sum(labeled == i)
+                    if component_size < 10:  # Remove components smaller than 10 pixels
+                        red_brush_mask[labeled == i] = False
+                print(f"[DEBUG] Removed {num_features} small components")
+            except:
+                print(f"[DEBUG] Could not clean mask, using as-is")
+        
+        # Create binary mask (white = inpaint, black = preserve)
+        binary_mask = np.where(red_brush_mask, 255, 0).astype(np.uint8)
+        
+        # Validate mask has sufficient coverage
+        masked_pixels = np.sum(binary_mask > 0)
+        total_pixels = binary_mask.size
+        mask_coverage = (masked_pixels / total_pixels) * 100
+        
+        print(f"[DEBUG] Mask coverage: {mask_coverage:.2f}% ({masked_pixels} pixels)")
+        
+        # If mask coverage is too low, it might be a detection issue
+        if mask_coverage < 0.1:  # Less than 0.1% coverage
+            print(f"[DEBUG] Warning: Very low mask coverage, might be detection issue")
+            # Try with more lenient thresholds
+            red_brush_mask_relaxed = (
+                (red_channel > 60) &  # Lower red threshold
+                (red_green_diff > 20) &  # Lower difference threshold
+                (red_blue_diff > 20) &
+                (alpha_channel > 150)  # Lower alpha threshold
+            )
+            binary_mask_relaxed = np.where(red_brush_mask_relaxed, 255, 0).astype(np.uint8)
+            relaxed_coverage = (np.sum(binary_mask_relaxed > 0) / total_pixels) * 100
+            print(f"[DEBUG] Relaxed mask coverage: {relaxed_coverage:.2f}%")
+            
+            if relaxed_coverage > mask_coverage:
+                binary_mask = binary_mask_relaxed
+                print(f"[DEBUG] Using relaxed mask detection")
+        
+        # Convert back to PIL Image
+        mask_pil = Image.fromarray(binary_mask, mode='L')
+        
+        print(f"[DEBUG] Mask processed: shape={binary_mask.shape}, unique values={np.unique(binary_mask)}")
+        print(f"[DEBUG] Red channel stats: min={red_channel.min()}, max={red_channel.max()}, mean={red_channel.mean():.2f}")
+        print(f"[DEBUG] Green channel stats: min={green_channel.min()}, max={green_channel.max()}, mean={green_channel.mean():.2f}")
+        print(f"[DEBUG] Blue channel stats: min={blue_channel.min()}, max={blue_channel.max()}, mean={blue_channel.mean():.2f}")
+        print(f"[DEBUG] Alpha channel stats: min={alpha_channel.min()}, max={alpha_channel.max()}, mean={alpha_channel.mean():.2f}")
+        print(f"[DEBUG] Red-Green diff stats: min={red_green_diff.min()}, max={red_green_diff.max()}, mean={red_green_diff.mean():.2f}")
+        print(f"[DEBUG] Red-Blue diff stats: min={red_blue_diff.min()}, max={red_blue_diff.max()}, mean={red_blue_diff.mean():.2f}")
+        print(f"[DEBUG] Red brush mask pixels: {np.sum(red_brush_mask)} out of {red_brush_mask.size}")
+        print(f"[DEBUG] Binary mask stats: min={binary_mask.min()}, max={binary_mask.max()}, mean={binary_mask.mean():.2f}")
+        
+        # Save mask for debugging
+        debug_mask_path = os.path.join('static/storyboards', 'debug_mask.png')
+        mask_pil.save(debug_mask_path)
+        print(f"[DEBUG] Debug mask saved to: {debug_mask_path}")
+        
+        return mask_pil
+    except Exception as e:
+        print(f"[DEBUG] Error processing mask data: {e}")
+        return None
+
 def generate_demo_storyboard(prompt, style):
     """Generate a demo storyboard with placeholder images"""
     images = []
@@ -233,7 +365,10 @@ def generate_storyboard():
         mode = data.get('mode', 'demo')
         gen_type = data.get('genType', 'storyboard')
         img2img_mode = data.get('img2img', False)
+        inpainting_mode = data.get('inpainting', False)
         input_image_path = data.get('inputImagePath', None)
+        inpainting_image_path = data.get('inpaintingImagePath', None)
+        mask_data = data.get('maskData', None)
         strength = data.get('strength', 0.75)
         print(f"[DEBUG] /generate called with mode={mode}, genType={gen_type}, style={style}, prompt={prompt[:40]}")
         if not prompt:
@@ -248,18 +383,112 @@ def generate_storyboard():
         if mode == 'ai':
             print("[DEBUG] Entering Full AI mode.")
             try:
-                from diffusionlab.tasks.storyboard import generate_scene_variations, generate_caption, pipe, STYLE_PRESETS, IMAGE_CONFIG
+                from diffusionlab.tasks.storyboard import generate_scene_variations, generate_caption, pipe, inpaint_pipe, STYLE_PRESETS, IMAGE_CONFIG
             except ImportError as e:
                 print(f"[DEBUG] ImportError in AI mode: {e}")
                 return jsonify({'error': 'AI mode is not available. Please ensure diffusionlab/tasks/storyboard.py and dependencies are present.'}), 500
-            if gen_type == 'single' or gen_type == 'img2img':
-                print(f"[DEBUG] AI {'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
+            if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting':
+                print(f"[DEBUG] AI {'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
                 # Generate a single AI image
                 scene = prompt
                 style_preset = STYLE_PRESETS.get(style, STYLE_PRESETS["cinematic"])
                 negative_prompt = style_preset["negative_prompt"]
                 
-                if img2img_mode and input_image_path:
+                if inpainting_mode and inpainting_image_path and mask_data:
+                    print(f"[DEBUG] AI Inpainting mode")
+                    print(f"[DEBUG] inpaint_pipe available: {inpaint_pipe is not None}")
+                    
+                    # Load the input image
+                    input_image = Image.open(inpainting_image_path).convert('RGB')
+                    input_image = resize_image_for_inpainting(input_image)
+                    print(f"[DEBUG] Input image size: {input_image.size}")
+                    
+                    # Process mask data
+                    mask = process_mask_data(mask_data)
+                    if mask is None:
+                        return jsonify({'error': 'Failed to process mask data'}), 400
+                    print(f"[DEBUG] Mask size: {mask.size}, mode: {mask.mode}")
+                    
+                    # Ensure mask and image are the same size
+                    if mask.size != input_image.size:
+                        mask = mask.resize(input_image.size, Image.Resampling.NEAREST)
+                        print(f"[DEBUG] Resized mask to match image: {mask.size}")
+                    
+                    # Check if mask contains any masked pixels
+                    mask_array = np.array(mask)
+                    masked_pixels = np.sum(mask_array > 0)
+                    total_pixels = mask_array.size
+                    mask_percentage = (masked_pixels / total_pixels) * 100
+                    print(f"[DEBUG] Mask contains {masked_pixels} masked pixels out of {total_pixels} ({mask_percentage:.2f}%)")
+                    
+                    if masked_pixels == 0:
+                        return jsonify({'error': 'No masked areas detected. Please draw on areas you want to change.'}), 400
+                    
+                    # Check if inpaint_pipe is available, fallback to regular pipe if not
+                    if inpaint_pipe is not None:
+                        print(f"[DEBUG] Using inpaint_pipe for inpainting")
+                        print(f"[DEBUG] inpaint_pipe type: {type(inpaint_pipe)}")
+                        try:
+                            # Try with original mask first
+                            print(f"[DEBUG] Trying inpainting with original mask")
+                            image = inpaint_pipe(
+                                scene,
+                                image=input_image,
+                                mask_image=mask,
+                                negative_prompt=negative_prompt,
+                                num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
+                                guidance_scale=IMAGE_CONFIG["guidance_scale"],
+                                # Add inpainting-specific parameters
+                                inpaint_full_res=True,
+                                inpaint_full_res_padding=32,
+                                mask_blur=4
+                            ).images[0]
+                            print(f"[DEBUG] Inpainting completed successfully with original mask")
+                        except Exception as e:
+                            print(f"[DEBUG] Inpainting failed with original mask: {e}")
+                            try:
+                                # Try with inverted mask
+                                print(f"[DEBUG] Trying inpainting with inverted mask")
+                                mask_array = np.array(mask)
+                                inverted_mask = np.where(mask_array > 0, 0, 255).astype(np.uint8)
+                                inverted_mask_pil = Image.fromarray(inverted_mask, mode='L')
+                                
+                                image = inpaint_pipe(
+                                    scene,
+                                    image=input_image,
+                                    mask_image=inverted_mask_pil,
+                                    negative_prompt=negative_prompt,
+                                    num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
+                                    guidance_scale=IMAGE_CONFIG["guidance_scale"],
+                                    inpaint_full_res=True,
+                                    inpaint_full_res_padding=32,
+                                    mask_blur=4
+                                ).images[0]
+                                print(f"[DEBUG] Inpainting completed successfully with inverted mask")
+                            except Exception as e2:
+                                print(f"[DEBUG] Inpainting failed with inverted mask: {e2}")
+                                print(f"[DEBUG] Falling back to regular pipe")
+                                # Fallback to regular pipe if inpainting fails
+                                image = pipe(
+                                    scene,
+                                    image=input_image,
+                                    strength=0.8,
+                                    negative_prompt=negative_prompt,
+                                    num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
+                                    guidance_scale=IMAGE_CONFIG["guidance_scale"]
+                                ).images[0]
+                    else:
+                        print(f"[DEBUG] inpaint_pipe not available, falling back to regular pipe")
+                        # Fallback to regular pipe (this will replace the entire image)
+                        image = pipe(
+                            scene,
+                            image=input_image,
+                            strength=0.8,  # High strength for more transformation
+                            negative_prompt=negative_prompt,
+                            num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
+                            guidance_scale=IMAGE_CONFIG["guidance_scale"]
+                        ).images[0]
+                elif img2img_mode and input_image_path:
                     print(f"[DEBUG] AI Image-to-Image mode with strength={strength}")
                     # Load the input image
                     input_image = Image.open(input_image_path).convert('RGB')
@@ -302,7 +531,8 @@ def generate_storyboard():
                     'prompt': prompt,
                     'style': style,
                     'mode': mode,
-                    'img2img': img2img_mode
+                    'img2img': img2img_mode,
+                    'inpainting': inpainting_mode
                 })
             else:
                 print("[DEBUG] AI Storyboard mode.")
@@ -344,9 +574,30 @@ def generate_storyboard():
                 })
         else:
             print("[DEBUG] Entering Demo mode.")
-            if gen_type == 'single' or gen_type == 'img2img':
-                print(f"[DEBUG] Demo {'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
-                if img2img_mode and input_image_path:
+            if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting':
+                print(f"[DEBUG] Demo {'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
+                if inpainting_mode and inpainting_image_path and mask_data:
+                    print(f"[DEBUG] Demo Inpainting mode")
+                    # Load the input image and create a demo inpainting
+                    input_image = Image.open(inpainting_image_path).convert('RGB')
+                    input_image = resize_image(input_image)
+                    
+                    # Create a demo inpainting by overlaying text
+                    demo_image = input_image.copy()
+                    draw = ImageDraw.Draw(demo_image)
+                    try:
+                        font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 24)
+                    except:
+                        font = ImageFont.load_default()
+                    
+                    # Add inpainting indicator
+                    draw.text((10, 10), "Demo Inpainting", fill='yellow', font=font)
+                    draw.text((10, 40), f"Prompt: {prompt[:30]}...", fill='white', font=font)
+                    draw.text((10, 70), "Style: " + STYLES[style]['name'], fill='white', font=font)
+                    draw.text((10, 100), "Masked areas will be filled", fill='red', font=font)
+                    
+                    image = demo_image
+                elif img2img_mode and input_image_path:
                     print(f"[DEBUG] Demo Image-to-Image mode with strength={strength}")
                     # Load the input image and create a demo transformation
                     input_image = Image.open(input_image_path).convert('RGB')
@@ -386,7 +637,8 @@ def generate_storyboard():
                     'prompt': prompt,
                     'style': style,
                     'mode': mode,
-                    'img2img': img2img_mode
+                    'img2img': img2img_mode,
+                    'inpainting': inpainting_mode
                 })
             else:
                 print("[DEBUG] Demo Storyboard mode.")
@@ -432,7 +684,130 @@ def get_styles():
 @app.route('/health')
 def health_check():
     """Health check endpoint"""
-    return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
+    try:
+        # Test if inpainting pipeline is available
+        from diffusionlab.tasks.storyboard import inpaint_pipe
+        inpaint_available = inpaint_pipe is not None
+    except:
+        inpaint_available = False
+    
+    return jsonify({
+        'status': 'healthy', 
+        'timestamp': datetime.now().isoformat(),
+        'inpainting_available': inpaint_available
+    })
+
+@app.route('/test-mask', methods=['POST'])
+def test_mask():
+    """Test endpoint for mask processing"""
+    try:
+        data = request.get_json()
+        mask_data = data.get('maskData')
+        
+        if not mask_data:
+            return jsonify({'error': 'No mask data provided'}), 400
+        
+        # Process mask data
+        mask = process_mask_data(mask_data)
+        
+        if mask is None:
+            return jsonify({'error': 'Failed to process mask data'}), 400
+        
+        # Convert mask back to base64 for verification
+        buffer = io.BytesIO()
+        mask.save(buffer, format='PNG')
+        buffer.seek(0)
+        mask_base64 = base64.b64encode(buffer.getvalue()).decode()
+        
+        # Also create an inverted mask for testing
+        mask_array = np.array(mask)
+        inverted_mask = np.where(mask_array > 0, 0, 255).astype(np.uint8)
+        inverted_mask_pil = Image.fromarray(inverted_mask, mode='L')
+        
+        buffer_inverted = io.BytesIO()
+        inverted_mask_pil.save(buffer_inverted, format='PNG')
+        buffer_inverted.seek(0)
+        inverted_mask_base64 = base64.b64encode(buffer_inverted.getvalue()).decode()
+        
+        # Check if inpainting pipeline is available
+        try:
+            from diffusionlab.tasks.storyboard import inpaint_pipe
+            inpaint_available = inpaint_pipe is not None
+            inpaint_type = str(type(inpaint_pipe)) if inpaint_pipe is not None else "None"
+        except:
+            inpaint_available = False
+            inpaint_type = "Import Error"
+        
+        return jsonify({
+            'success': True,
+            'mask_size': mask.size,
+            'mask_mode': mask.mode,
+            'processed_mask': mask_base64,
+            'inverted_mask': inverted_mask_base64,
+            'masked_pixels': int(np.sum(mask_array > 0)),
+            'total_pixels': mask_array.size,
+            'inpaint_available': inpaint_available,
+            'inpaint_type': inpaint_type
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Error processing mask: {str(e)}'}), 500
+
+@app.route('/test-inpainting', methods=['POST'])
+def test_inpainting():
+    """Test endpoint for inpainting functionality"""
+    try:
+        data = request.get_json()
+        image_data = data.get('imageData')
+        mask_data = data.get('maskData')
+        prompt = data.get('prompt', 'A beautiful flower')
+        
+        if not image_data or not mask_data:
+            return jsonify({'error': 'Both image and mask data required'}), 400
+        
+        # Process image data
+        if image_data.startswith('data:image/png;base64,'):
+            image_data = image_data.split(',')[1]
+        image_bytes = base64.b64decode(image_data)
+        input_image = Image.open(io.BytesIO(image_bytes)).convert('RGB')
+        input_image = resize_image_for_inpainting(input_image)
+        
+        # Process mask data
+        mask = process_mask_data(mask_data)
+        if mask is None:
+            return jsonify({'error': 'Failed to process mask data'}), 400
+        
+        # Check if inpainting pipeline is available
+        try:
+            from diffusionlab.tasks.storyboard import inpaint_pipe
+            if inpaint_pipe is not None:
+                # Try inpainting
+                result = inpaint_pipe(
+                    prompt,
+                    image=input_image,
+                    mask_image=mask,
+                    num_inference_steps=10,  # Use fewer steps for testing
+                    guidance_scale=7.5
+                ).images[0]
+                
+                # Convert result to base64
+                buffer = io.BytesIO()
+                result.save(buffer, format='PNG')
+                buffer.seek(0)
+                result_base64 = base64.b64encode(buffer.getvalue()).decode()
+                
+                return jsonify({
+                    'success': True,
+                    'result': result_base64,
+                    'message': 'Inpainting test completed successfully'
+                })
+            else:
+                return jsonify({'error': 'Inpainting pipeline not available'}), 400
+        except Exception as e:
+            return jsonify({'error': f'Inpainting test failed: {str(e)}'}), 500
+        
+    except Exception as e:
+        return jsonify({'error': f'Error in inpainting test: {str(e)}'}), 500
 
 if __name__ == '__main__':
     print("🎬 Starting Storyboard Generator Web App...")

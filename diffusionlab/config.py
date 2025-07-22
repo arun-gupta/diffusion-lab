@@ -148,6 +148,19 @@ IMG2IMG_CONFIG = {
     "num_images_per_prompt": 1
 }
 
+# Inpainting Settings
+INPAINTING_CONFIG = {
+    "guidance_scale": 7.5,
+    "num_inference_steps": 30,
+    "width": 512,
+    "height": 512,
+    "num_images_per_prompt": 1,
+    "mask_blur": 4,  # Blur radius for mask edges
+    "fill_mode": "fill",  # fill, original, latent_fill, latent_noise
+    "inpaint_full_res": True,
+    "inpaint_full_res_padding": 32
+}
+
 # Validation Rules
 VALIDATION_RULES = {
     "min_prompt_length": 10,

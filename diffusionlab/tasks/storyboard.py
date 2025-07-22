@@ -1,6 +1,6 @@
 import gradio as gr
 import torch
-from diffusers import StableDiffusionXLPipeline
+from diffusers import StableDiffusionXLPipeline, StableDiffusionXLInpaintPipeline
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -16,14 +16,15 @@ from diffusionlab.utils import *
 
 # --- Model and Pipeline Setup (Top Level) ---
 pipe = None
+inpaint_pipe = None
 model = None
 tokenizer = None
 
 # Load models at import time for webapp AI mode
 # (If you want to delay loading for Gradio UI, you can move this into a function)
 def load_models():
-    global pipe, tokenizer, model
-    if pipe is not None and tokenizer is not None and model is not None:
+    global pipe, inpaint_pipe, tokenizer, model
+    if pipe is not None and inpaint_pipe is not None and tokenizer is not None and model is not None:
         return
     print("Loading Stable Diffusion XL...")
     pipe = StableDiffusionXLPipeline.from_pretrained(
@@ -32,17 +33,27 @@ def load_models():
         use_safetensors=MODEL_CONFIG["use_safetensors"],
         variant=MODEL_CONFIG["variant"]
     )
+    print("Loading Stable Diffusion XL Inpainting...")
+    inpaint_pipe = StableDiffusionXLInpaintPipeline.from_pretrained(
+        MODEL_CONFIG["diffusion_model"],
+        torch_dtype=getattr(torch, MODEL_CONFIG["torch_dtype"]),
+        use_safetensors=MODEL_CONFIG["use_safetensors"],
+        variant=MODEL_CONFIG["variant"]
+    )
     device = get_optimal_device()
     if device == "cuda":
         pipe = pipe.to("cuda")
+        inpaint_pipe = inpaint_pipe.to("cuda")
         print("Using CUDA for image generation")
     elif device == "mps":
         pipe = pipe.to("mps")
+        inpaint_pipe = inpaint_pipe.to("mps")
         print("Using MPS for image generation")
     else:
         print("Using CPU for image generation (slower)")
     if PERFORMANCE_CONFIG["enable_attention_slicing"]:
         pipe.enable_attention_slicing()
+        inpaint_pipe.enable_attention_slicing()
     print("Loading StableLM for caption generation...")
     tokenizer = AutoTokenizer.from_pretrained(MODEL_CONFIG["text_model"])
     model = AutoModelForCausalLM.from_pretrained(
