@@ -20,6 +20,8 @@ class StoryboardGenerator {
         this.updateStyleDescription();
         this.updateModeLabel(); // Initialize mode label on load
         this.updateStatusMessage(); // Initialize status message
+        this.updateModeIndicator(); // Initialize mode indicator on load
+        this.updateExamplePromptVisibility(); // Initialize example prompt visibility on load
     }
 
     bindEvents() {
@@ -202,6 +204,12 @@ class StoryboardGenerator {
         
         // Update status message
         this.updateStatusMessage();
+        
+        // Update example prompt visibility
+        this.updateExamplePromptVisibility();
+        
+        // Update mode indicator
+        this.updateModeIndicator();
     }
 
     updateStatusMessage() {
@@ -215,6 +223,139 @@ class StoryboardGenerator {
                                  genType === 'single' ? 'Ready to generate art' :
                                  'Ready to generate storyboard';
             statusElement.textContent = defaultMessage;
+        }
+    }
+
+    updateExamplePromptVisibility() {
+        const genType = document.getElementById('generationMode').value;
+        
+        // Get all example prompt tabs
+        const storyboardTab = document.getElementById('storyboard-tab');
+        const singleTab = document.getElementById('single-tab');
+        const img2imgTab = document.getElementById('img2img-tab');
+        const inpaintingTab = document.getElementById('inpainting-tab');
+        const promptChainingTab = document.getElementById('prompt-chaining-tab');
+        
+        // Get all example prompt tab panes
+        const storyboardExamples = document.getElementById('storyboard-examples');
+        const singleExamples = document.getElementById('single-examples');
+        const img2imgExamples = document.getElementById('img2img-examples');
+        const inpaintingExamples = document.getElementById('inpainting-examples');
+        const promptChainingExamples = document.getElementById('prompt-chaining-examples');
+        
+        // Reset all tabs and panes to default state
+        [storyboardTab, singleTab, img2imgTab, inpaintingTab, promptChainingTab].forEach(tab => {
+            if (tab) {
+                tab.classList.remove('disabled');
+                tab.style.opacity = '1';
+                tab.style.pointerEvents = 'auto';
+            }
+        });
+        
+        // Disable tabs that don't match the current generation type
+        if (genType === 'storyboard') {
+            // Enable only storyboard examples
+            this.disableExampleTab(singleTab, 'Single-Image Art');
+            this.disableExampleTab(img2imgTab, 'Image-to-Image');
+            this.disableExampleTab(inpaintingTab, 'Inpainting');
+            this.disableExampleTab(promptChainingTab, 'Prompt Chaining');
+            
+            // Show storyboard examples by default
+            if (storyboardTab && !storyboardTab.classList.contains('active')) {
+                storyboardTab.click();
+            }
+        } else if (genType === 'single') {
+            // Enable only single image examples
+            this.disableExampleTab(storyboardTab, 'Storyboard');
+            this.disableExampleTab(img2imgTab, 'Image-to-Image');
+            this.disableExampleTab(inpaintingTab, 'Inpainting');
+            this.disableExampleTab(promptChainingTab, 'Prompt Chaining');
+            
+            // Show single image examples by default
+            if (singleTab && !singleTab.classList.contains('active')) {
+                singleTab.click();
+            }
+        } else if (genType === 'img2img') {
+            // Enable only img2img examples
+            this.disableExampleTab(storyboardTab, 'Storyboard');
+            this.disableExampleTab(singleTab, 'Single-Image Art');
+            this.disableExampleTab(inpaintingTab, 'Inpainting');
+            this.disableExampleTab(promptChainingTab, 'Prompt Chaining');
+            
+            // Show img2img examples by default
+            if (img2imgTab && !img2imgTab.classList.contains('active')) {
+                img2imgTab.click();
+            }
+        } else if (genType === 'inpainting') {
+            // Enable only inpainting examples
+            this.disableExampleTab(storyboardTab, 'Storyboard');
+            this.disableExampleTab(singleTab, 'Single-Image Art');
+            this.disableExampleTab(img2imgTab, 'Image-to-Image');
+            this.disableExampleTab(promptChainingTab, 'Prompt Chaining');
+            
+            // Show inpainting examples by default
+            if (inpaintingTab && !inpaintingTab.classList.contains('active')) {
+                inpaintingTab.click();
+            }
+        } else if (genType === 'prompt-chaining') {
+            // Enable only prompt chaining examples
+            this.disableExampleTab(storyboardTab, 'Storyboard');
+            this.disableExampleTab(singleTab, 'Single-Image Art');
+            this.disableExampleTab(img2imgTab, 'Image-to-Image');
+            this.disableExampleTab(inpaintingTab, 'Inpainting');
+            
+            // Show prompt chaining examples by default
+            if (promptChainingTab && !promptChainingTab.classList.contains('active')) {
+                promptChainingTab.click();
+            }
+        }
+    }
+
+    disableExampleTab(tab, modeName) {
+        if (tab) {
+            tab.classList.add('disabled');
+            tab.style.opacity = '0.5';
+            tab.style.pointerEvents = 'none';
+            tab.title = `Not available in ${modeName} mode`;
+            
+            // Add click handler to show helpful message
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.updateStatus(`Switch to ${modeName} mode to see these examples`, 'info');
+            });
+        }
+    }
+
+    updateModeIndicator() {
+        const genType = document.getElementById('generationMode').value;
+        const indicator = document.getElementById('currentModeIndicator');
+        
+        if (indicator) {
+            const modeNames = {
+                'storyboard': 'Storyboard',
+                'single': 'Single-Image Art',
+                'img2img': 'Image-to-Image',
+                'inpainting': 'Inpainting',
+                'prompt-chaining': 'Story Evolution'
+            };
+            
+            const modeName = modeNames[genType] || 'Storyboard';
+            indicator.textContent = modeName;
+            
+            // Update badge color based on mode
+            indicator.className = 'badge ms-2';
+            if (genType === 'storyboard') {
+                indicator.classList.add('bg-primary');
+            } else if (genType === 'single') {
+                indicator.classList.add('bg-success');
+            } else if (genType === 'img2img') {
+                indicator.classList.add('bg-info');
+            } else if (genType === 'inpainting') {
+                indicator.classList.add('bg-warning');
+            } else if (genType === 'prompt-chaining') {
+                indicator.classList.add('bg-danger');
+            }
         }
     }
 
@@ -1186,6 +1327,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (listGroup) {
         listGroup.addEventListener('click', function(e) {
             if (e.target.classList.contains('example-prompt')) {
+                // Check if the tab is disabled
+                const tab = e.target.closest('.tab-pane');
+                if (tab) {
+                    const tabId = tab.id;
+                    const tabButton = document.querySelector(`[data-bs-target="#${tabId}"]`);
+                    if (tabButton && tabButton.classList.contains('disabled')) {
+                        return; // Don't process click if tab is disabled
+                    }
+                }
+                
                 const prompt = e.target.dataset.prompt;
                 document.getElementById('prompt').value = prompt;
                 window.storyboardApp.updateStatus('Example prompt loaded', 'info');

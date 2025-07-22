@@ -269,6 +269,25 @@ footer {
     margin-right: 0.25rem;
 }
 
+/* Disabled tab styling */
+#exampleTabs .nav-link.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+#exampleTabs .nav-link.disabled:hover {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    transform: none;
+}
+
+#exampleTabs .nav-link.disabled i {
+    opacity: 0.5;
+}
+
 .tab-content {
     border: 1px solid #dee2e6;
     border-top: none;
