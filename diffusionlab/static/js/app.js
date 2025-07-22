@@ -168,6 +168,7 @@ class StoryboardGenerator {
         document.getElementById('img2imgSection').style.display = 'none';
         document.getElementById('inpaintingSection').style.display = 'none';
         document.getElementById('promptChainingSection').style.display = 'none';
+        document.getElementById('mainPromptSection').style.display = 'block';
         
         if (genType === 'single') {
             document.getElementById('captionsCard').classList.add('d-none');
@@ -189,6 +190,7 @@ class StoryboardGenerator {
             document.getElementById('singleImageContainer').classList.add('d-none');
             document.getElementById('storyboardContainer').classList.remove('d-none');
             document.getElementById('promptChainingSection').style.display = 'block';
+            document.getElementById('mainPromptSection').style.display = 'none';
             // Clear any uploaded images when switching to prompt chaining mode
             this.removeUploadedImage();
             this.removeInpaintingImage();
@@ -370,15 +372,17 @@ class StoryboardGenerator {
         const mode = this.getCurrentMode();
         const genType = document.getElementById('generationMode').value;
 
-        // Validation
-        if (!prompt) {
-            this.updateStatus('Please enter a scene description', 'error');
-            return;
-        }
+        // Validation - Skip main prompt validation for prompt chaining mode
+        if (genType !== 'prompt-chaining') {
+            if (!prompt) {
+                this.updateStatus('Please enter a scene description', 'error');
+                return;
+            }
 
-        if (prompt.length < 10) {
-            this.updateStatus('Scene description should be at least 10 characters', 'error');
-            return;
+            if (prompt.length < 10) {
+                this.updateStatus('Scene description should be at least 10 characters', 'error');
+                return;
+            }
         }
 
         // Additional validation for img2img mode

@@ -372,12 +372,15 @@ def generate_storyboard():
         strength = data.get('strength', 0.75)
         prompt_chain_data = data.get('promptChain', None)
         print(f"[DEBUG] /generate called with mode={mode}, genType={gen_type}, style={style}, prompt={prompt[:40]}")
-        if not prompt:
-            print("[DEBUG] No prompt provided.")
-            return jsonify({'error': 'Please enter a scene description'}), 400
-        if len(prompt) < 10:
-            print("[DEBUG] Prompt too short.")
-            return jsonify({'error': 'Scene description should be at least 10 characters'}), 400
+        
+        # Skip main prompt validation for prompt chaining mode
+        if gen_type != 'prompt-chaining':
+            if not prompt:
+                print("[DEBUG] No prompt provided.")
+                return jsonify({'error': 'Please enter a scene description'}), 400
+            if len(prompt) < 10:
+                print("[DEBUG] Prompt too short.")
+                return jsonify({'error': 'Scene description should be at least 10 characters'}), 400
         if style not in STYLES:
             print(f"[DEBUG] Invalid style '{style}', defaulting to cinematic.")
             style = 'cinematic'
@@ -554,7 +557,7 @@ def generate_storyboard():
                         'image': img_base64,
                         'filename': filename,
                         'captions': captions,
-                        'prompt': prompt,
+                        'prompt': prompt or "Story Evolution",  # Use default if main prompt is empty
                         'style': style,
                         'mode': mode,
                         'promptChain': True,
@@ -722,7 +725,7 @@ def generate_storyboard():
                         'image': img_base64,
                         'filename': filename,
                         'captions': captions,
-                        'prompt': prompt,
+                        'prompt': prompt or "Story Evolution",  # Use default if main prompt is empty
                         'style': style,
                         'mode': mode,
                         'promptChain': True,
