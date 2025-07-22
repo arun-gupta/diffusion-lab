@@ -43,9 +43,9 @@ python3 -m diffusionlab.api.webapp
 ![Sample Art](docs/sample-art.png)
 
 ### 🔄 Batch Generation
-**"A futuristic cityscape with flying cars and neon lights"** *(4 variations, Cinematic style)*
+**"A magical forest with glowing mushrooms and fairy lights"** *(4 variations, Anime style, 0.8 strength)*
 
-![Sample Batch](docs/sample-batch.png)
+![Sample Batch](docs/sample-batchgen.png)
 
 ### 🔄 Image-to-Image Transformation
 **"A polished character design for a sci-fi video game protagonist"** *(Photorealistic style, strength: 0.5)*
