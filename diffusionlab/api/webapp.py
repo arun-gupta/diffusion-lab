@@ -28,9 +28,19 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 # Allowed file extensions for image uploads
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'}
 
+def get_project_root():
+    """Get the absolute path to the project root directory"""
+    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+def get_storyboards_dir():
+    """Get the absolute path to the storyboards directory"""
+    project_root = get_project_root()
+    return os.path.join(project_root, 'static', 'storyboards')
+
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-os.makedirs('static/storyboards', exist_ok=True)
+storyboards_dir = get_storyboards_dir()
+os.makedirs(storyboards_dir, exist_ok=True)
 
 # Configuration
 STYLES = {
@@ -283,7 +293,7 @@ def process_mask_data(mask_data_url):
         print(f"[DEBUG] Binary mask stats: min={binary_mask.min()}, max={binary_mask.max()}, mean={binary_mask.mean():.2f}")
         
         # Save mask for debugging
-        debug_mask_path = os.path.join('static/storyboards', 'debug_mask.png')
+        debug_mask_path = os.path.join(get_storyboards_dir(), 'debug_mask.png')
         mask_pil.save(debug_mask_path)
         print(f"[DEBUG] Debug mask saved to: {debug_mask_path}")
         
@@ -546,7 +556,7 @@ def generate_storyboard():
                     storyboard = create_storyboard_layout(images, captions)
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                     filename = f"prompt_chain_{timestamp}.png"
-                    filepath = os.path.join('static/storyboards', filename)
+                    filepath = os.path.join(get_storyboards_dir(), filename)
                     storyboard.save(filepath)
                     buffer = io.BytesIO()
                     storyboard.save(buffer, format='PNG')
@@ -578,7 +588,7 @@ def generate_storyboard():
                 caption = generate_caption(scene)
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"single_art_{timestamp}.png"
-                filepath = os.path.join('static/storyboards', filename)
+                filepath = os.path.join(get_storyboards_dir(), filename)
                 image.save(filepath)
                 buffer = io.BytesIO()
                 image.save(buffer, format='PNG')
@@ -618,7 +628,7 @@ def generate_storyboard():
                 storyboard = create_storyboard_layout(images, captions)
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"storyboard_{timestamp}.png"
-                filepath = os.path.join('static/storyboards', filename)
+                filepath = os.path.join(get_storyboards_dir(), filename)
                 storyboard.save(filepath)
                 buffer = io.BytesIO()
                 storyboard.save(buffer, format='PNG')
@@ -714,7 +724,7 @@ def generate_storyboard():
                     storyboard = create_storyboard_layout(images, captions)
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                     filename = f"demo_prompt_chain_{timestamp}.png"
-                    filepath = os.path.join('static/storyboards', filename)
+                    filepath = os.path.join(get_storyboards_dir(), filename)
                     storyboard.save(filepath)
                     buffer = io.BytesIO()
                     storyboard.save(buffer, format='PNG')
@@ -738,7 +748,7 @@ def generate_storyboard():
                 caption = f"Art: {prompt[:30]}..."
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"single_art_{timestamp}.png"
-                filepath = os.path.join('static/storyboards', filename)
+                filepath = os.path.join(get_storyboards_dir(), filename)
                 image.save(filepath)
                 buffer = io.BytesIO()
                 image.save(buffer, format='PNG')
@@ -760,7 +770,7 @@ def generate_storyboard():
                 storyboard, captions = generate_demo_storyboard(prompt, style)
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"storyboard_{timestamp}.png"
-                filepath = os.path.join('static/storyboards', filename)
+                filepath = os.path.join(get_storyboards_dir(), filename)
                 storyboard.save(filepath)
                 buffer = io.BytesIO()
                 storyboard.save(buffer, format='PNG')
@@ -783,11 +793,12 @@ def generate_storyboard():
 def download_storyboard(filename):
     """Download storyboard as PNG"""
     try:
-        filepath = os.path.join('static/storyboards', filename)
+        filepath = os.path.join(get_storyboards_dir(), filename)
+        
         if os.path.exists(filepath):
             return send_file(filepath, as_attachment=True, download_name=filename)
         else:
-            return jsonify({'error': 'File not found'}), 404
+            return jsonify({'error': f'File not found: {filepath}'}), 404
     except Exception as e:
         return jsonify({'error': f'Error downloading file: {str(e)}'}), 500
 

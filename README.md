@@ -108,9 +108,14 @@ http://localhost:5001
 
 ![Sample Inpainting](docs/sample-inpainting.png)
 
+### 🔗 Prompt Chaining (Story Evolution)
+**Character Journey: "A young adventurer's quest from village to mountain peak"** *(Cinematic style, 5-step evolution)*
+
+![Sample Prompt Chaining](docs/sample-promptchaining.png)
+
 <!--
 To add your own examples, place images in the docs/ directory and update the paths above.
-Examples include: main-ui.png, sample-storyboard.png, sample-art.png, sample-img2img.png, sample-inpainting.png
+Examples include: main-ui.png, sample-storyboard.png, sample-art.png, sample-img2img.png, sample-inpainting.png, sample-promptchaining.png
 -->
 
 ## How It Works
