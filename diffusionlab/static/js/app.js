@@ -111,6 +111,31 @@ class StoryboardGenerator {
         document.getElementById('testMask').addEventListener('click', () => {
             this.testMask();
         });
+
+        // Prompt Chaining functionality
+        document.getElementById('addPromptStep').addEventListener('click', () => {
+            this.addPromptStep();
+        });
+
+        document.getElementById('loadTemplate').addEventListener('click', () => {
+            this.loadTemplate();
+        });
+
+        document.getElementById('clearPrompts').addEventListener('click', () => {
+            this.clearPrompts();
+        });
+
+        document.getElementById('evolutionStrength').addEventListener('input', (e) => {
+            document.getElementById('strengthValue2').textContent = e.target.value;
+        });
+
+        // Example prompt chain templates
+        document.querySelectorAll('.example-prompt-chain').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const template = e.target.dataset.template;
+                this.loadPromptChainTemplate(template);
+            });
+        });
     }
 
     updateStyleDescription() {
@@ -140,6 +165,7 @@ class StoryboardGenerator {
         // Hide all sections first
         document.getElementById('img2imgSection').style.display = 'none';
         document.getElementById('inpaintingSection').style.display = 'none';
+        document.getElementById('promptChainingSection').style.display = 'none';
         
         if (genType === 'single') {
             document.getElementById('captionsCard').classList.add('d-none');
@@ -156,6 +182,14 @@ class StoryboardGenerator {
             document.getElementById('singleImageContainer').classList.remove('d-none');
             document.getElementById('storyboardContainer').classList.add('d-none');
             document.getElementById('inpaintingSection').style.display = 'block';
+        } else if (genType === 'prompt-chaining') {
+            document.getElementById('captionsCard').classList.add('d-none');
+            document.getElementById('singleImageContainer').classList.add('d-none');
+            document.getElementById('storyboardContainer').classList.remove('d-none');
+            document.getElementById('promptChainingSection').style.display = 'block';
+            // Clear any uploaded images when switching to prompt chaining mode
+            this.removeUploadedImage();
+            this.removeInpaintingImage();
         } else {
             // Storyboard mode
             document.getElementById('captionsCard').classList.add('d-none');
@@ -177,6 +211,7 @@ class StoryboardGenerator {
         if (statusElement.className.includes('text-muted')) {
             const defaultMessage = genType === 'img2img' ? 'Ready to transform image' :
                                  genType === 'inpainting' ? 'Ready to fill masked areas' :
+                                 genType === 'prompt-chaining' ? 'Ready to create story evolution' :
                                  genType === 'single' ? 'Ready to generate art' :
                                  'Ready to generate storyboard';
             statusElement.textContent = defaultMessage;
@@ -217,6 +252,17 @@ class StoryboardGenerator {
             return;
         }
 
+        // Additional validation for prompt chaining mode
+        if (genType === 'prompt-chaining') {
+            const promptSteps = document.querySelectorAll('.prompt-input');
+            const validPrompts = Array.from(promptSteps).filter(step => step.value.trim().length >= 10);
+            
+            if (validPrompts.length < 2) {
+                this.updateStatus('Please enter at least 2 prompts with at least 10 characters each', 'error');
+                return;
+            }
+        }
+
         // Show loading state
         if (mode === 'ai') {
             this._aiCancelled = false;
@@ -226,6 +272,7 @@ class StoryboardGenerator {
         }
         const statusMessage = genType === 'img2img' ? 'Transforming image...' : 
                              genType === 'inpainting' ? 'Filling masked areas...' :
+                             genType === 'prompt-chaining' ? 'Creating story evolution...' :
                              genType === 'single' ? 'Generating art...' : 
                              'Generating storyboard...';
         this.updateStatus(statusMessage, 'info');
@@ -243,6 +290,24 @@ class StoryboardGenerator {
                 console.log('[DEBUG] Canvas mask data preview:', maskData.substring(0, 100) + '...');
             }
             
+            // Get prompt chaining data
+            let promptChainData = null;
+            if (genType === 'prompt-chaining') {
+                const promptSteps = document.querySelectorAll('.prompt-input');
+                promptChainData = Array.from(promptSteps)
+                    .map(step => step.value.trim())
+                    .filter(prompt => prompt.length >= 10);
+                
+                const evolutionStrength = parseFloat(document.getElementById('evolutionStrength').value);
+                const chainLayout = document.getElementById('chainLayout').value;
+                
+                promptChainData = {
+                    prompts: promptChainData,
+                    evolutionStrength: evolutionStrength,
+                    layout: chainLayout
+                };
+            }
+
             const response = await fetch('/generate', {
                 method: 'POST',
                 headers: {
@@ -258,7 +323,8 @@ class StoryboardGenerator {
                     inputImagePath: this.uploadedImagePath,
                     inpaintingImagePath: this.inpaintingImagePath,
                     maskData: maskData,
-                    strength: strength
+                    strength: strength,
+                    promptChain: promptChainData
                 })
             });
 
@@ -271,7 +337,7 @@ class StoryboardGenerator {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                if (genType === 'single' || genType === 'img2img' || genType === 'inpainting') {
+                if (genType === 'single' || genType === 'img2img' || genType === 'inpainting' || genType === 'prompt-chaining') {
                     this.displaySingleImage(data);
                 } else {
                     this.displayStoryboard(data);
@@ -921,6 +987,194 @@ class StoryboardGenerator {
         document.getElementById('maskTestModal').addEventListener('hidden.bs.modal', function () {
             this.remove();
         });
+    }
+
+    // Prompt Chaining Methods
+    addPromptStep() {
+        const container = document.getElementById('promptChainContainer');
+        const currentSteps = container.querySelectorAll('.prompt-chain-item');
+        const newStepNumber = currentSteps.length + 1;
+        
+        if (newStepNumber > 5) {
+            this.updateStatus('Maximum 5 steps allowed', 'error');
+            return;
+        }
+        
+        const stepHTML = `
+            <div class="prompt-chain-item mb-3" data-step="${newStepNumber}">
+                <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-primary me-2">Step ${newStepNumber}</span>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-auto" onclick="window.storyboardApp.removePromptStep(this)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <textarea class="form-control prompt-input" rows="2" 
+                    placeholder="e.g., The adventurer enters the cave and discovers ancient ruins"
+                    required></textarea>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', stepHTML);
+        this.updateStatus(`Added step ${newStepNumber}`, 'info');
+    }
+
+    removePromptStep(button) {
+        const stepItem = button.closest('.prompt-chain-item');
+        stepItem.remove();
+        this.renumberSteps();
+        this.updateStatus('Step removed', 'info');
+    }
+
+    renumberSteps() {
+        const steps = document.querySelectorAll('.prompt-chain-item');
+        steps.forEach((step, index) => {
+            const stepNumber = index + 1;
+            step.dataset.step = stepNumber;
+            step.querySelector('.badge').textContent = `Step ${stepNumber}`;
+        });
+    }
+
+    clearPrompts() {
+        const container = document.getElementById('promptChainContainer');
+        container.innerHTML = `
+            <div class="prompt-chain-item mb-3" data-step="1">
+                <div class="d-flex align-items-center mb-2">
+                    <span class="badge bg-primary me-2">Step 1</span>
+                    <button type="button" class="btn btn-sm btn-outline-danger ms-auto" onclick="window.storyboardApp.removePromptStep(this)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <textarea class="form-control prompt-input" rows="2" 
+                    placeholder="e.g., A young adventurer stands at the entrance of a mysterious cave"
+                    required></textarea>
+            </div>
+        `;
+        this.updateStatus('All prompts cleared', 'info');
+    }
+
+    loadTemplate() {
+        // This will be implemented to show a template selection modal
+        this.showTemplateModal();
+    }
+
+    showTemplateModal() {
+        const modalHTML = `
+            <div class="modal fade" id="templateModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Choose Story Template</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="list-group">
+                                <button class="list-group-item list-group-item-action" data-template="character-journey">
+                                    <h6>🚶 Character Journey</h6>
+                                    <small>Follow a character through different stages of their journey</small>
+                                </button>
+                                <button class="list-group-item list-group-item-action" data-template="environmental-progression">
+                                    <h6>🌍 Environmental Progression</h6>
+                                    <small>Show how an environment changes over time</small>
+                                </button>
+                                <button class="list-group-item list-group-item-action" data-template="emotional-arc">
+                                    <h6>💫 Emotional Arc</h6>
+                                    <small>Visualize an emotional journey or transformation</small>
+                                </button>
+                                <button class="list-group-item list-group-item-action" data-template="action-sequence">
+                                    <h6>⚡ Action Sequence</h6>
+                                    <small>Create a dynamic action sequence</small>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remove existing modal if any
+        const existingModal = document.getElementById('templateModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Add event listeners
+        const modal = new bootstrap.Modal(document.getElementById('templateModal'));
+        document.querySelectorAll('#templateModal .list-group-item').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const template = e.currentTarget.dataset.template;
+                this.loadPromptChainTemplate(template);
+                modal.hide();
+            });
+        });
+
+        modal.show();
+
+        // Clean up modal when hidden
+        document.getElementById('templateModal').addEventListener('hidden.bs.modal', function () {
+            this.remove();
+        });
+    }
+
+    loadPromptChainTemplate(template) {
+        const templates = {
+            'character-journey': [
+                'A young adventurer stands at the entrance of a mysterious cave',
+                'The adventurer enters the cave and discovers ancient ruins',
+                'The adventurer faces a dangerous challenge or obstacle',
+                'The adventurer overcomes the challenge and finds treasure',
+                'The adventurer emerges victorious with new knowledge and power'
+            ],
+            'environmental-progression': [
+                'A peaceful forest in the early morning light',
+                'Dark clouds gather and the wind begins to howl',
+                'A powerful storm rages through the forest',
+                'The storm passes, leaving destruction in its wake',
+                'New life begins to emerge from the aftermath'
+            ],
+            'emotional-arc': [
+                'A person sits alone in a quiet, contemplative moment',
+                'Tension builds as they face an internal conflict',
+                'The emotional climax reaches its peak',
+                'Resolution begins as they find inner peace',
+                'A transformed person emerges with new understanding'
+            ],
+            'action-sequence': [
+                'A hero prepares for battle, checking their equipment',
+                'The hero charges into action against their enemy',
+                'The battle reaches its most intense moment',
+                'The hero delivers the final decisive blow',
+                'The hero stands victorious over the defeated foe'
+            ]
+        };
+
+        if (templates[template]) {
+            this.clearPrompts();
+            const container = document.getElementById('promptChainContainer');
+            container.innerHTML = '';
+            
+            templates[template].forEach((prompt, index) => {
+                const stepNumber = index + 1;
+                const stepHTML = `
+                    <div class="prompt-chain-item mb-3" data-step="${stepNumber}">
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="badge bg-primary me-2">Step ${stepNumber}</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger ms-auto" onclick="window.storyboardApp.removePromptStep(this)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <textarea class="form-control prompt-input" rows="2" 
+                            placeholder="Enter your prompt here"
+                            required>${prompt}</textarea>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', stepHTML);
+            });
+            
+            this.updateStatus(`Loaded ${template.replace('-', ' ')} template`, 'success');
+        }
     }
 }
 

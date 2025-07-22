@@ -161,6 +161,69 @@ INPAINTING_CONFIG = {
     "inpaint_full_res_padding": 32
 }
 
+# Prompt Chaining / Story Evolution Settings
+PROMPT_CHAINING_CONFIG = {
+    "max_prompts": 5,  # Maximum number of prompts in a chain
+    "min_prompts": 2,  # Minimum number of prompts required
+    "evolution_strength": 0.3,  # How much each image influences the next (0.0-1.0)
+    "style_consistency": True,  # Maintain consistent style across the chain
+    "character_consistency": True,  # Maintain consistent characters across the chain
+    "guidance_scale": 7.5,
+    "num_inference_steps": 30,
+    "width": 512,
+    "height": 512,
+    "num_images_per_prompt": 1,
+    "chain_layout": "horizontal"  # horizontal, vertical, grid
+}
+
+# Story Evolution Templates
+STORY_EVOLUTION_TEMPLATES = [
+    {
+        "name": "Character Journey",
+        "description": "Follow a character through different stages of their journey",
+        "template": [
+            "Character introduction and setting",
+            "Character faces a challenge or conflict",
+            "Character overcomes the challenge",
+            "Character learns and grows",
+            "Character reaches their goal or destination"
+        ]
+    },
+    {
+        "name": "Environmental Progression",
+        "description": "Show how an environment changes over time",
+        "template": [
+            "Initial peaceful state",
+            "First signs of change or conflict",
+            "Major transformation or event",
+            "Aftermath and consequences",
+            "New equilibrium or resolution"
+        ]
+    },
+    {
+        "name": "Emotional Arc",
+        "description": "Visualize an emotional journey or transformation",
+        "template": [
+            "Starting emotional state",
+            "Building tension or conflict",
+            "Climax or peak emotion",
+            "Resolution and acceptance",
+            "New emotional state or growth"
+        ]
+    },
+    {
+        "name": "Action Sequence",
+        "description": "Create a dynamic action sequence",
+        "template": [
+            "Setup and preparation",
+            "First action or movement",
+            "Escalation and conflict",
+            "Climax of action",
+            "Resolution and aftermath"
+        ]
+    }
+]
+
 # Validation Rules
 VALIDATION_RULES = {
     "min_prompt_length": 10,

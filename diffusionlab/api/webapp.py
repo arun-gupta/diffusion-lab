@@ -370,6 +370,7 @@ def generate_storyboard():
         inpainting_image_path = data.get('inpaintingImagePath', None)
         mask_data = data.get('maskData', None)
         strength = data.get('strength', 0.75)
+        prompt_chain_data = data.get('promptChain', None)
         print(f"[DEBUG] /generate called with mode={mode}, genType={gen_type}, style={style}, prompt={prompt[:40]}")
         if not prompt:
             print("[DEBUG] No prompt provided.")
@@ -387,8 +388,8 @@ def generate_storyboard():
             except ImportError as e:
                 print(f"[DEBUG] ImportError in AI mode: {e}")
                 return jsonify({'error': 'AI mode is not available. Please ensure diffusionlab/tasks/storyboard.py and dependencies are present.'}), 500
-            if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting':
-                print(f"[DEBUG] AI {'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
+            if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting' or gen_type == 'prompt-chaining':
+                print(f"[DEBUG] AI {'Prompt Chaining' if gen_type == 'prompt-chaining' else 'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
                 # Generate a single AI image
                 scene = prompt
                 style_preset = STYLE_PRESETS.get(style, STYLE_PRESETS["cinematic"])
@@ -503,6 +504,63 @@ def generate_storyboard():
                         num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
                         guidance_scale=IMAGE_CONFIG["guidance_scale"]
                     ).images[0]
+                elif gen_type == 'prompt-chaining' and prompt_chain_data:
+                    print(f"[DEBUG] AI Prompt Chaining mode")
+                    # Generate a sequence of images for prompt chaining
+                    prompts = prompt_chain_data.get('prompts', [])
+                    evolution_strength = prompt_chain_data.get('evolutionStrength', 0.3)
+                    layout = prompt_chain_data.get('layout', 'horizontal')
+                    
+                    if len(prompts) < 2:
+                        return jsonify({'error': 'At least 2 prompts required for prompt chaining'}), 400
+                    
+                    print(f"[DEBUG] Generating {len(prompts)} images for prompt chain")
+                    images = []
+                    captions = []
+                    style_preset = STYLE_PRESETS.get(style, STYLE_PRESETS["cinematic"])
+                    negative_prompt = style_preset["negative_prompt"]
+                    
+                    for i, chain_prompt in enumerate(prompts):
+                        print(f"[DEBUG] Generating prompt chain image {i+1}/{len(prompts)}: {chain_prompt[:60]}")
+                        
+                        # Add style suffix to the prompt
+                        full_prompt = f"{chain_prompt}, {style_preset['prompt_suffix']}"
+                        
+                        image = pipe(
+                            full_prompt,
+                            negative_prompt=negative_prompt,
+                            num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
+                            guidance_scale=IMAGE_CONFIG["guidance_scale"],
+                            width=IMAGE_CONFIG["width"],
+                            height=IMAGE_CONFIG["height"]
+                        ).images[0]
+                        
+                        caption = f"Step {i+1}: {chain_prompt[:50]}..."
+                        images.append(image)
+                        captions.append(caption)
+                    
+                    # Create storyboard layout for the prompt chain
+                    storyboard = create_storyboard_layout(images, captions)
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    filename = f"prompt_chain_{timestamp}.png"
+                    filepath = os.path.join('static/storyboards', filename)
+                    storyboard.save(filepath)
+                    buffer = io.BytesIO()
+                    storyboard.save(buffer, format='PNG')
+                    buffer.seek(0)
+                    img_base64 = base64.b64encode(buffer.getvalue()).decode()
+                    return jsonify({
+                        'success': True,
+                        'image': img_base64,
+                        'filename': filename,
+                        'captions': captions,
+                        'prompt': prompt,
+                        'style': style,
+                        'mode': mode,
+                        'promptChain': True,
+                        'evolutionStrength': evolution_strength,
+                        'layout': layout
+                    })
                 else:
                     # Generate image using text-to-image
                     image = pipe(
@@ -574,8 +632,8 @@ def generate_storyboard():
                 })
         else:
             print("[DEBUG] Entering Demo mode.")
-            if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting':
-                print(f"[DEBUG] Demo {'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
+            if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting' or gen_type == 'prompt-chaining':
+                print(f"[DEBUG] Demo {'Prompt Chaining' if gen_type == 'prompt-chaining' else 'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
                 if inpainting_mode and inpainting_image_path and mask_data:
                     print(f"[DEBUG] Demo Inpainting mode")
                     # Load the input image and create a demo inpainting
@@ -617,6 +675,60 @@ def generate_storyboard():
                     draw.text((10, 70), "Style: " + STYLES[style]['name'], fill='white', font=font)
                     
                     image = demo_image
+                elif gen_type == 'prompt-chaining' and prompt_chain_data:
+                    print(f"[DEBUG] Demo Prompt Chaining mode")
+                    # Create demo prompt chaining storyboard
+                    prompts = prompt_chain_data.get('prompts', [])
+                    evolution_strength = prompt_chain_data.get('evolutionStrength', 0.3)
+                    layout = prompt_chain_data.get('layout', 'horizontal')
+                    
+                    if len(prompts) < 2:
+                        return jsonify({'error': 'At least 2 prompts required for prompt chaining'}), 400
+                    
+                    print(f"[DEBUG] Creating demo prompt chain with {len(prompts)} steps")
+                    images = []
+                    captions = []
+                    
+                    for i, chain_prompt in enumerate(prompts):
+                        # Create demo image for each prompt
+                        demo_image = create_demo_image(chain_prompt, style, i + 1)
+                        
+                        # Add prompt chaining indicator
+                        draw = ImageDraw.Draw(demo_image)
+                        try:
+                            font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 20)
+                        except:
+                            font = ImageFont.load_default()
+                        
+                        draw.text((10, 10), f"Demo Prompt Chain - Step {i+1}", fill='yellow', font=font)
+                        draw.text((10, 35), f"Evolution Strength: {evolution_strength}", fill='cyan', font=font)
+                        draw.text((10, 60), f"Layout: {layout}", fill='cyan', font=font)
+                        
+                        images.append(demo_image)
+                        captions.append(f"Step {i+1}: {chain_prompt[:50]}...")
+                    
+                    # Create storyboard layout for the prompt chain
+                    storyboard = create_storyboard_layout(images, captions)
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    filename = f"demo_prompt_chain_{timestamp}.png"
+                    filepath = os.path.join('static/storyboards', filename)
+                    storyboard.save(filepath)
+                    buffer = io.BytesIO()
+                    storyboard.save(buffer, format='PNG')
+                    buffer.seek(0)
+                    img_base64 = base64.b64encode(buffer.getvalue()).decode()
+                    return jsonify({
+                        'success': True,
+                        'image': img_base64,
+                        'filename': filename,
+                        'captions': captions,
+                        'prompt': prompt,
+                        'style': style,
+                        'mode': mode,
+                        'promptChain': True,
+                        'evolutionStrength': evolution_strength,
+                        'layout': layout
+                    })
                 else:
                     image = create_demo_image(prompt, style, 1)
                 

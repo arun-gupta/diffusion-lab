@@ -312,6 +312,100 @@ The inpainting system includes advanced mask detection and processing:
 | Art Restoration | Mask damaged areas | "Original artwork continuation" |
 | Creative Replacement | Mask the object to replace | "A vintage wooden door with ornate carvings" |
 
+## Prompt Chaining (Story Evolution) Usage Guide
+
+### What is Prompt Chaining?
+Prompt Chaining creates a sequence of images that tell a story by generating multiple images based on a series of connected prompts. Each image builds upon the previous one, creating a visual narrative that evolves over time.
+
+### Step-by-Step Instructions
+
+1. **Select Prompt Chaining Mode**
+   - Choose "Prompt Chaining (Story Evolution)" from the Generation Type dropdown
+   - The prompt chaining interface will automatically appear
+
+2. **Create Your Story Prompts**
+   - **Add Steps**: Click "Add Step" to add new prompts to your story
+   - **Edit Prompts**: Write descriptive prompts for each step of your story
+   - **Remove Steps**: Click the X button to remove unwanted steps
+   - **Clear All**: Start over with the "Clear All" button
+
+3. **Use Story Templates**
+   - Click "Load Template" to choose from pre-built story structures:
+     - **Character Journey**: Follow a character through their adventure
+     - **Environmental Progression**: Show how a setting changes over time
+     - **Emotional Arc**: Visualize an emotional transformation
+     - **Action Sequence**: Create a dynamic action story
+
+4. **Adjust Evolution Settings**
+   - **Evolution Strength**: Controls how much each image influences the next (0.0-1.0)
+   - **Layout**: Choose how images are arranged (Horizontal, Vertical, Grid)
+
+5. **Choose Your Style**
+   - Select from available styles (Cinematic, Anime, Photorealistic, etc.)
+   - The style will be applied consistently across all story images
+
+6. **Generate Your Story**
+   - Click "Generate" to create your story evolution
+   - Wait for processing (faster in Demo mode, slower in AI mode)
+   - Download your storyboard when complete
+
+### Tips for Best Results
+
+- **Story Flow**: Create prompts that naturally progress from one to the next
+- **Character Consistency**: Keep character descriptions consistent across prompts
+- **Environmental Continuity**: Maintain setting details throughout the story
+- **Emotional Progression**: Build emotional intensity or resolution over time
+- **Action Sequences**: Create clear cause-and-effect relationships
+- **Style Consistency**: Use the same style for all images in your story
+
+### Story Templates
+
+#### Character Journey Template
+1. **Introduction**: Character in their starting environment
+2. **Challenge**: Character faces a problem or obstacle
+3. **Struggle**: Character works to overcome the challenge
+4. **Growth**: Character learns and develops
+5. **Resolution**: Character achieves their goal
+
+#### Environmental Progression Template
+1. **Peaceful State**: Initial calm environment
+2. **Change Begins**: First signs of transformation
+3. **Major Event**: Significant change or conflict
+4. **Aftermath**: Consequences of the change
+5. **New Equilibrium**: Resolution and new state
+
+#### Emotional Arc Template
+1. **Starting State**: Initial emotional condition
+2. **Building Tension**: Increasing emotional pressure
+3. **Climax**: Peak emotional moment
+4. **Resolution**: Beginning of emotional resolution
+5. **Transformation**: New emotional state
+
+#### Action Sequence Template
+1. **Setup**: Preparation and context
+2. **Action Begins**: First movement or conflict
+3. **Escalation**: Increasing intensity
+4. **Climax**: Peak action moment
+5. **Resolution**: Outcome and aftermath
+
+### Common Use Cases
+
+- **Storytelling**: Create visual narratives for books, comics, or presentations
+- **Character Development**: Show character growth and transformation
+- **Environmental Stories**: Document how settings change over time
+- **Educational Content**: Create step-by-step visual guides
+- **Marketing**: Show product evolution or user journey
+- **Creative Writing**: Visualize story scenes and progression
+
+### Quick Reference
+
+| Story Type | Evolution Strength | Layout | Example Use |
+|------------|-------------------|--------|-------------|
+| Character Journey | 0.3-0.5 | Horizontal | Character development stories |
+| Environmental | 0.4-0.6 | Grid | Setting transformation |
+| Emotional Arc | 0.2-0.4 | Vertical | Emotional storytelling |
+| Action Sequence | 0.5-0.7 | Horizontal | Dynamic action stories |
+
 ### Gradio Interface
 1. Open your browser and go to `http://localhost:7860`
 2. Enter your scene description in the text box
@@ -340,6 +434,26 @@ The inpainting system includes advanced mask detection and processing:
 - **Content Addition**: Mask a wall area + "A cozy fireplace with crackling flames and warm lighting"
 - **Art Restoration**: Mask damaged areas + "Original artwork continuation matching the existing style"
 - **Creative Replacement**: Mask an object + "A vintage wooden door with ornate carvings and brass handle"
+
+### Prompt Chaining Examples
+- **Character Journey**: 
+  1. "A young knight stands at the castle gates, ready for adventure"
+  2. "The knight enters a dark forest, sword drawn and cautious"
+  3. "The knight battles a fierce dragon in a clearing"
+  4. "The knight emerges victorious, holding the dragon's treasure"
+  5. "The knight returns to the castle, hailed as a hero"
+- **Environmental Progression**:
+  1. "A peaceful village in the morning light"
+  2. "Dark clouds gather over the village"
+  3. "A storm rages through the village streets"
+  4. "The storm passes, leaving destruction behind"
+  5. "The village rebuilds, stronger than before"
+- **Emotional Arc**:
+  1. "A person sits alone in a quiet room, looking thoughtful"
+  2. "The person faces a difficult decision, tension visible"
+  3. "The person reaches a moment of crisis and despair"
+  4. "The person begins to find inner peace and acceptance"
+  5. "The person emerges transformed, confident and happy"
 
 ## Technical Details
 
@@ -376,7 +490,7 @@ The inpainting system includes advanced mask detection and processing:
 - **✅ 2. Inpainting (Content-aware Fill):** Remove or replace parts of an image by masking them and describing what should go there. *(Implemented)*
 - **3. Outpainting (Image Expansion):** Extend the borders of an image with new, contextually appropriate content.
 - **4. Style Transfer:** Apply the style of one image (e.g., a famous painting) to another image.
-- **5. Prompt Chaining / Story Evolution:** Generate a sequence of images that evolve based on a series of prompts.
+- **✅ 5. Prompt Chaining / Story Evolution:** Generate a sequence of images that evolve based on a series of prompts. *(Implemented)*
 - **6. Batch Generation & Variations:** Generate multiple variations for a single prompt to explore creative diversity.
 - **7. Animated Diffusion (Frame Interpolation):** Create short animations by generating frames that morph between prompts or images.
 - **8. DreamBooth / Custom Subject Training:** Fine-tune Stable Diffusion on a small set of images of a person, pet, or object, so you can generate that subject in any context.

@@ -33,6 +33,7 @@
                                     <option value="single">Single-Image Art</option>
                                     <option value="img2img">Image-to-Image</option>
                                     <option value="inpainting">Inpainting (Content-aware Fill)</option>
+                                    <option value="prompt-chaining">Prompt Chaining (Story Evolution)</option>
                                 </select>
                                 <div class="form-text">Choose to generate a storyboard, single art piece, transform an image, or fill masked areas.</div>
                             </div>
@@ -147,6 +148,55 @@
                                 </div>
                             </div>
 
+                            <!-- Prompt Chaining Section -->
+                            <div class="mb-3" id="promptChainingSection" style="display: none;">
+                                <label class="form-label">Story Evolution Prompts:</label>
+                                <div class="form-text mb-2">Create a sequence of prompts that tell a story. Each image will build upon the previous one.</div>
+                                
+                                <div id="promptChainContainer">
+                                    <div class="prompt-chain-item mb-3" data-step="1">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <span class="badge bg-primary me-2">Step 1</span>
+                                            <button type="button" class="btn btn-sm btn-outline-danger ms-auto" onclick="removePromptStep(this)">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        <textarea class="form-control prompt-input" rows="2" 
+                                            placeholder="e.g., A young adventurer stands at the entrance of a mysterious cave"
+                                            required></textarea>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex gap-2 mb-3">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="addPromptStep">
+                                        <i class="fas fa-plus"></i> Add Step
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info btn-sm" id="loadTemplate">
+                                        <i class="fas fa-file-alt"></i> Load Template
+                                    </button>
+                                    <button type="button" class="btn btn-outline-warning btn-sm" id="clearPrompts">
+                                        <i class="fas fa-trash"></i> Clear All
+                                    </button>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="evolutionStrength" class="form-label">Evolution Strength: <span id="strengthValue2">0.3</span></label>
+                                    <input type="range" class="form-range" id="evolutionStrength" min="0.0" max="1.0" step="0.1" value="0.3">
+                                    <div class="form-text">
+                                        <small>0.0 = Each image is independent, 1.0 = Each image heavily influences the next</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="chainLayout" class="form-label">Layout:</label>
+                                    <select class="form-select" id="chainLayout">
+                                        <option value="horizontal">Horizontal (side by side)</option>
+                                        <option value="vertical">Vertical (stacked)</option>
+                                        <option value="grid">Grid (2x3)</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <button type="submit" class="btn btn-primary btn-lg w-100" id="generateBtn">
                                 <i class="fas fa-magic"></i> Generate
                             </button>
@@ -176,6 +226,11 @@
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link" id="inpainting-tab" data-bs-toggle="tab" data-bs-target="#inpainting-examples" type="button" role="tab">
                                         <i class="fas fa-magic"></i> Inpainting
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="prompt-chaining-tab" data-bs-toggle="tab" data-bs-target="#prompt-chaining-examples" type="button" role="tab">
+                                        <i class="fas fa-link"></i> Story Evolution
                                     </button>
                                 </li>
                             </ul>
@@ -274,6 +329,32 @@
                                         <button class="list-group-item list-group-item-action example-prompt" 
                                                 data-prompt="A serene lake with mountain reflections">
                                             🏔️ Fill with: Mountain lake
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Prompt Chaining Examples -->
+                                <div class="tab-pane fade" id="prompt-chaining-examples" role="tabpanel">
+                                    <div class="list-group list-group-flush mt-2">
+                                        <button class="list-group-item list-group-item-action example-prompt-chain" 
+                                                data-template="character-journey">
+                                            🚶 Character Journey: From introduction to goal
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt-chain" 
+                                                data-template="environmental-progression">
+                                            🌍 Environmental Progression: Peace to transformation
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt-chain" 
+                                                data-template="emotional-arc">
+                                            💫 Emotional Arc: From calm to climax to resolution
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt-chain" 
+                                                data-template="action-sequence">
+                                            ⚡ Action Sequence: Setup to resolution
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt-chain" 
+                                                data-template="custom">
+                                            ✨ Custom Story: Create your own evolution
                                         </button>
                                     </div>
                                 </div>
