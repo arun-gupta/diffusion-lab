@@ -75,16 +75,33 @@ python3 -m diffusionlab.api.webapp
 
 For detailed usage instructions, see the [Usage Guide](USAGE_GUIDE.md).
 
-### Quick Start
+### Basic Usage
 1. Open `http://localhost:5001` in your browser
-2. Select your mode: **Storyboard**, **Single-Image Art**, **Image-to-Image**, or **Inpainting**
+2. Select your mode: **Storyboard**, **Single-Image Art**, **Batch Generation**, **Image-to-Image**, **Inpainting**, or **Prompt Chaining**
 3. Toggle between **Demo** (fast) and **AI** (full quality) modes
 4. Enter your prompt and choose a style
-5. For **Image-to-Image**: Upload an image and adjust transformation strength
-6. For **Inpainting**: Upload an image, draw masks, and describe what should fill them
-7. Click "Generate" and download your results
+5. For **Batch Generation**: Configure variation count, layout, and strength
+6. For **Image-to-Image**: Upload an image and adjust transformation strength
+7. For **Inpainting**: Upload an image, draw masks, and describe what should fill them
+8. For **Prompt Chaining**: Add multiple prompts for story evolution
+9. Click "Generate" and download your results
 
 ### Key Features
+
+#### 📖 Storyboard Generation
+- Generate 5-panel storyboards with AI images and captions
+- Choose from multiple visual styles
+- Perfect for storytelling and concept development
+
+#### 🎨 Single-Image Art
+- Create high-quality AI images from text prompts
+- Multiple style presets available
+- Ideal for concept art and illustrations
+
+#### 🔄 Batch Generation
+- Generate multiple variations of the same prompt
+- Configure variation count (2-8) and strength
+- Choose from grid, horizontal, or vertical layouts
 
 #### 🔄 Image-to-Image
 - Upload sketches, photos, or concepts
@@ -178,10 +195,12 @@ python3 -m diffusionlab.api.webapp
 
 ## 🚧 Planned Features
 
-- **✅ Image-to-Image**: Transform sketches into artwork *(Implemented)*
-- **✅ Inpainting**: Remove/replace image content *(Implemented)*
-- **✅ Prompt Chaining**: Create story sequences *(Implemented)*
-- **✅ Batch Generation**: Multiple variations with configurable parameters *(Implemented)*
+- **✅ Storyboard Generation**: Create 5-panel storyboards with AI images and captions *(Implemented)*
+- **✅ Single-Image Art**: Generate high-quality AI images from text prompts *(Implemented)*
+- **✅ Batch Generation**: Create multiple variations of the same prompt for creative exploration *(Implemented)*
+- **✅ Image-to-Image**: Transform sketches/photos into polished artwork *(Implemented)*
+- **✅ Inpainting**: Remove objects or fill areas with AI-generated content *(Implemented)*
+- **✅ Prompt Chaining**: Create evolving story sequences with multiple prompts *(Implemented)*
 - **🔄 Outpainting**: Extend image borders
 - **🔄 Style Transfer**: Apply artistic styles
 - **🔄 Animated Diffusion**: Frame interpolation
