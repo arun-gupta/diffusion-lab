@@ -8,6 +8,7 @@ Comprehensive troubleshooting guide for Diffusion Lab issues and solutions.
 - [Web Application Issues](#web-application-issues)
 - [Image-to-Image Issues](#image-to-image-issues)
 - [Inpainting Issues](#inpainting-issues)
+- [ControlNet Issues](#controlnet-issues)
 - [Performance Issues](#performance-issues)
 - [Debugging Tools](#debugging-tools)
 
@@ -193,6 +194,49 @@ Comprehensive troubleshooting guide for Diffusion Lab issues and solutions.
   - Check that StableDiffusionXLInpaintPipeline is properly loaded
   - Restart the application
   - Check for memory issues
+
+## ControlNet Issues
+
+### ControlNet Models Not Loading
+- **Symptom**: "ControlNet model not available, falling back to regular generation"
+- **Solution**:
+  - ControlNet models are loaded on-demand to save memory
+  - This is expected behavior - the system will use regular generation as fallback
+  - For full ControlNet functionality, ensure sufficient memory (16GB+ RAM recommended)
+  - Check that `controlnet-aux` and `opencv-python` are installed
+
+### ControlNet Image Upload Issues
+- **Symptom**: "No such file or directory" when uploading reference images
+- **Solution**:
+  - Ensure the upload folder has proper write permissions
+  - Check that the image file is a valid format (JPEG, PNG)
+  - Restart the application if upload folder is corrupted
+  - Clear browser cache if upload appears to fail
+
+### ControlNet Generation Falls Back to Regular Generation
+- **Symptom**: ControlNet generation produces results similar to regular text-to-image
+- **Solution**:
+  - This is the current implementation behavior for stability
+  - ControlNet models require significant memory and processing power
+  - The fallback ensures the system remains functional
+  - Full ControlNet implementation is in development
+
+### ControlNet Preprocessor Errors
+- **Symptom**: ImportError for `cv2` or ControlNet preprocessors
+- **Solution**:
+  ```bash
+  # Install required dependencies
+  pip install opencv-python controlnet-aux
+  # Restart the application
+  ```
+
+### ControlNet Memory Issues
+- **Symptom**: System crashes or becomes unresponsive during ControlNet generation
+- **Solution**:
+  - Use Demo mode for testing ControlNet functionality
+  - Close other applications to free up memory
+  - Consider using CPU mode if GPU memory is insufficient
+  - ControlNet models are memory-intensive
 
 ## Performance Issues
 

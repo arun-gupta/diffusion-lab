@@ -45,15 +45,9 @@ def load_models():
         variant=MODEL_CONFIG["variant"]
     )
     
-    # Initialize ControlNet processors (lightweight)
-    try:
-        controlnet_processors["canny"] = CannyDetector()
-        controlnet_processors["pose"] = OpenposeDetector.from_pretrained("lllyasviel/Annotators")
-        controlnet_processors["mlsd"] = MLSDdetector.from_pretrained("lllyasviel/Annotators")
-        controlnet_processors["hed"] = HEDdetector.from_pretrained("lllyasviel/Annotators")
-        print("ControlNet processors loaded successfully")
-    except Exception as e:
-        print(f"Warning: Could not load ControlNet processors: {e}")
+    # Initialize ControlNet processors (lightweight) - moved to on-demand loading
+    # This prevents import issues at startup
+    print("ControlNet processors will be loaded on-demand")
     
     device = get_optimal_device()
     if device == "cuda":

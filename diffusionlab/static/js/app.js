@@ -293,8 +293,8 @@ class StoryboardGenerator {
             this.removeInpaintingImage();
         } else if (genType === 'controlnet') {
             document.getElementById('captionsCard').classList.add('d-none');
-            document.getElementById('singleImageContainer').classList.add('d-none');
-            document.getElementById('storyboardContainer').classList.remove('d-none');
+            document.getElementById('singleImageContainer').classList.remove('d-none');
+            document.getElementById('storyboardContainer').classList.add('d-none');
             document.getElementById('controlnetSection').style.display = 'block';
             // Clear any uploaded images when switching to controlnet mode
             this.removeUploadedImage();
@@ -528,8 +528,8 @@ class StoryboardGenerator {
         const mode = this.getCurrentMode();
         const genType = document.getElementById('generationMode').value;
 
-        // Validation - Skip main prompt validation for prompt chaining mode
-        if (genType !== 'prompt-chaining') {
+        // Validation - Skip main prompt validation for prompt chaining and controlnet modes
+        if (genType !== 'prompt-chaining' && genType !== 'controlnet') {
             if (!prompt) {
                 this.updateStatus('Please enter a scene description', 'error');
                 return;

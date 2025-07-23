@@ -7,6 +7,7 @@ Detailed instructions for using all features of Diffusion Lab.
 - [Batch Generation Guide](#batch-generation-guide)
 - [Image-to-Image (img2img) Guide](#image-to-image-img2img-guide)
 - [Inpainting Guide](#inpainting-guide)
+- [ControlNet Guide](#controlnet-guide)
 - [Prompt Chaining Guide](#prompt-chaining-guide)
 - [Example Prompts](#example-prompts)
 - [Technical Details](#technical-details)
@@ -226,6 +227,95 @@ The inpainting system includes advanced mask detection and processing:
 | Art Restoration | Mask damaged areas | "Original artwork continuation" |
 | Creative Replacement | Mask the object to replace | "A vintage wooden door with ornate carvings" |
 
+## ControlNet Guide
+
+### What is ControlNet?
+ControlNet provides precise control over image generation by using reference images to guide the AI's understanding of composition, structure, and spatial relationships. It's perfect for:
+- Maintaining specific poses or layouts from reference images
+- Creating consistent architectural or structural elements
+- Controlling the spatial arrangement of objects
+- Ensuring precise line work or edge detection
+- Maintaining depth and perspective relationships
+
+### Step-by-Step Instructions
+
+1. **Select ControlNet Mode**
+   - Choose "ControlNet (Precise Control)" from the Generation Type dropdown
+   - The ControlNet interface will automatically appear
+
+2. **Upload Your Reference Image**
+   - Click "Choose File" in the Reference Image section
+   - Select an image that represents the structure or composition you want to control
+   - Supported formats: JPEG, PNG, GIF, BMP, WebP
+   - Maximum file size: 10MB
+
+3. **Choose Control Type**
+   - **Canny Edge Detection**: Best for line art, architectural drawings, precise outlines
+   - **Depth Map**: Ideal for 3D scenes, architectural visualization, spatial control
+   - **Human Pose**: Perfect for character poses, figure drawing, animation
+   - **Semantic Segmentation**: Great for object placement, scene composition, layout control
+
+4. **Adjust Control Parameters**
+   - **Control Strength**: Controls how much the reference image influences generation (0.0-2.0)
+     - 0.0: No control (regular generation)
+     - 1.0: Full control (follows reference closely)
+     - 2.0: Strong control (strict adherence to reference)
+   - **Guidance Start**: When to start applying control (0.0-1.0)
+     - 0.0: Apply control from the beginning
+     - 1.0: Apply control only at the end
+   - **Guidance End**: When to stop applying control (0.0-1.0)
+     - 0.0: Stop control at the beginning
+     - 1.0: Apply control until the end
+
+5. **Enter Your Prompt**
+   - Write a descriptive prompt for what you want to generate
+   - The prompt will work with the reference image to create the final result
+   - Be specific about style, content, and artistic direction
+
+6. **Choose Your Style**
+   - Select from available styles (Cinematic, Anime, Photorealistic, etc.)
+   - The style will be applied while respecting the control image structure
+
+7. **Generate Your Image**
+   - Click "Generate" to create your controlled image
+   - Wait for processing (faster in Demo mode, slower in AI mode)
+   - Download your result when complete
+
+### Tips for Best Results
+
+- **Reference Quality**: Use clear, high-contrast reference images for better control
+- **Control Type Matching**: Choose the control type that matches your reference image characteristics
+- **Strength Balance**: Start with 1.0 strength and adjust based on results
+- **Prompt Alignment**: Ensure your prompt aligns with what the reference image suggests
+- **Style Consistency**: Choose styles that work well with your reference image type
+- **Guidance Timing**: Use default guidance settings (0.0-1.0) for most cases
+
+### Common Use Cases
+
+- **Character Poses**: Use pose reference images to maintain specific character positions
+- **Architectural Design**: Control building layouts and structural elements
+- **Line Art Conversion**: Transform sketches into finished artwork while preserving lines
+- **Composition Control**: Maintain specific spatial arrangements and layouts
+- **Depth Control**: Create images with precise depth and perspective relationships
+- **Object Placement**: Control where and how objects are positioned in the scene
+
+### Quick Reference
+
+| Control Type | Best For | Strength Range | Example Use |
+|--------------|----------|----------------|-------------|
+| Canny Edge | Line art, architecture | 0.8-1.2 | Converting sketches to finished art |
+| Depth Map | 3D scenes, spatial control | 0.7-1.1 | Architectural visualization |
+| Human Pose | Character poses | 0.9-1.3 | Figure drawing, animation |
+| Segmentation | Object placement | 0.6-1.0 | Scene composition control |
+
+### Troubleshooting
+
+- **Weak Control**: Increase control strength or check reference image quality
+- **Over-Control**: Reduce control strength or adjust guidance timing
+- **Poor Results**: Try different control types or reference images
+- **Memory Issues**: Use Demo mode or reduce image resolution
+- **Import Errors**: Ensure `opencv-python` and `controlnet-aux` are installed
+
 ## Prompt Chaining Guide
 
 ### What is Prompt Chaining?
@@ -310,6 +400,12 @@ Prompt Chaining creates a sequence of images that tell a story by generating mul
 - **Content Addition**: Mask a wall area + "A cozy fireplace with crackling flames and warm lighting"
 - **Art Restoration**: Mask damaged areas + "Original artwork continuation matching the existing style"
 - **Creative Replacement**: Mask an object + "A vintage wooden door with ornate carvings and brass handle"
+
+### ControlNet Examples
+- **Canny Edge Control**: Upload line art + "A majestic dragon in a fantasy landscape with detailed scales and wings"
+- **Depth Map Control**: Upload architectural blueprint + "A futuristic cityscape with towering skyscrapers and flying cars"
+- **Human Pose Control**: Upload pose reference + "A heroic warrior in medieval armor standing proudly"
+- **Segmentation Control**: Upload layout sketch + "A cozy living room with fireplace, bookshelves, and comfortable furniture"
 
 ### Prompt Chaining Examples
 - **Character Journey**: 

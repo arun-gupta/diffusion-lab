@@ -74,9 +74,7 @@ python3 -m diffusionlab.api.webapp
 ### 🎯 ControlNet (Precise Control)
 **"A majestic dragon in a fantasy landscape"** *(Cinematic style, Canny edge control, strength: 1.0)*
 
-| Reference Image *(Edge Detection)* | Generated Output *(AI controlled by reference)* |
-|-----------------------------------|------------------------------------------------|
-| <img src="docs/sample-controlnet-reference.png" width="40%" alt="ControlNet Reference"> | <img src="docs/sample-controlnet-output.png" width="40%" alt="ControlNet Output"> |
+![Sample ControlNet](docs/sample-controlnet.png)
 
 ## 🎮 Usage
 
@@ -135,8 +133,14 @@ For detailed usage instructions, see the [Usage Guide](USAGE_GUIDE.md).
 
 ### Requirements
 - Python 3.8+
-- CUDA-compatible GPU (recommended)
-- 8GB+ RAM
+- CUDA-compatible GPU (recommended) or Apple Silicon (M1/M2/M3)
+- 8GB+ RAM (16GB+ recommended for AI mode)
+
+**Tested System Specifications:**
+- **Hardware**: Apple M1 Max
+- **OS**: macOS Sequoia 15.5
+- **Memory**: 64 GB RAM
+- **Storage**: SSD with sufficient space for AI models (~10GB)
 
 ### Setup
 ```bash
@@ -214,7 +218,7 @@ python3 -m diffusionlab.api.webapp
 - **✅ Image-to-Image**: Transform sketches/photos into polished artwork *(Implemented)*
 - **✅ Inpainting**: Remove objects or fill areas with AI-generated content *(Implemented)*
 - **✅ Prompt Chaining**: Create evolving story sequences with multiple prompts *(Implemented)*
-- **🔄 ControlNet**: Precise control over composition, pose, and structure using reference images *(In Development)*
+- **✅ ControlNet**: Precise control over composition, pose, and structure using reference images *(Implemented)*
 - **🔄 Outpainting**: Extend image borders
 - **🔄 Style Transfer**: Apply artistic styles
 - **🔄 Animated Diffusion**: Frame interpolation

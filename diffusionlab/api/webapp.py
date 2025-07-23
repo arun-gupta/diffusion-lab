@@ -716,8 +716,10 @@ def generate_storyboard():
                     })
                 elif gen_type == 'controlnet' and controlnet_image_path and controlnet_data:
                     print(f"[DEBUG] AI ControlNet mode")
-                    # Load the control image
-                    control_image = Image.open(controlnet_image_path).convert('RGB')
+                    # Load the control image - construct proper path
+                    control_image_full_path = os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(controlnet_image_path))
+                    print(f"[DEBUG] Loading control image from: {control_image_full_path}")
+                    control_image = Image.open(control_image_full_path).convert('RGB')
                     control_image = resize_image(control_image)
                     
                     # Get ControlNet parameters
