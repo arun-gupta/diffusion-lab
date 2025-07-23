@@ -28,6 +28,7 @@ python3 -m diffusionlab.api.webapp
 - **🔄 Image-to-Image**: Transform sketches/photos into polished artwork
 - **🎯 Inpainting**: Remove objects or fill areas with AI-generated content
 - **🔗 Prompt Chaining**: Create evolving story sequences with multiple prompts
+- **🎯 ControlNet**: Precise control over composition, pose, and structure using reference images
 - **📱 Web Interface**: Modern, responsive UI with real-time generation
 
 ## 📸 Example Outputs
