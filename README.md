@@ -1,6 +1,6 @@
 # Diffusion Lab
 
-Create professional AI art and storyboards instantly. Web app powered by Stable Diffusion XL with advanced features like inpainting, ControlNet, and batch generation.
+Create professional AI art and storyboards instantly from text prompts. Python web app powered by Stable Diffusion XL with advanced features like inpainting, ControlNet, and batch generation.
 
 [![License](https://img.shields.io/github/license/arun-gupta/diffusion-lab)](https://github.com/arun-gupta/diffusion-lab/blob/main/LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/downloads/)
