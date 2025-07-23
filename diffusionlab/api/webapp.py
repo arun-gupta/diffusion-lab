@@ -366,6 +366,48 @@ def upload_image():
     except Exception as e:
         return jsonify({'error': f'Error uploading file: {str(e)}'}), 500
 
+@app.route('/upload-controlnet', methods=['POST'])
+def upload_controlnet_image():
+    """Handle ControlNet image upload"""
+    try:
+        if 'image' not in request.files:
+            return jsonify({'error': 'No image file provided'}), 400
+        
+        file = request.files['image']
+        if file.filename == '':
+            return jsonify({'error': 'No image file selected'}), 400
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"controlnet_{timestamp}_{filename}"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            
+            # Save the uploaded file
+            file.save(filepath)
+            
+            # Open and resize the image
+            with Image.open(filepath) as img:
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                resized_img = resize_image(img)
+                resized_img.save(filepath)
+            
+            # Return the relative path for the frontend
+            relative_path = f"uploads/{filename}"
+            
+            print(f"[DEBUG] ControlNet image uploaded: {filepath}")
+            return jsonify({
+                'success': True,
+                'image_path': relative_path
+            })
+        else:
+            return jsonify({'error': 'Invalid file type. Please upload a valid image file.'}), 400
+    
+    except Exception as e:
+        print(f"[ERROR] Error uploading ControlNet image: {e}")
+        return jsonify({'error': f'Error uploading file: {str(e)}'}), 500
+
 @app.route('/generate', methods=['POST'])
 def generate_storyboard():
     try:
@@ -378,14 +420,16 @@ def generate_storyboard():
         inpainting_mode = data.get('inpainting', False)
         input_image_path = data.get('inputImagePath', None)
         inpainting_image_path = data.get('inpaintingImagePath', None)
+        controlnet_image_path = data.get('controlnetImagePath', None)
         mask_data = data.get('maskData', None)
         strength = data.get('strength', 0.75)
         prompt_chain_data = data.get('promptChain', None)
         batch_data = data.get('batch', None)
+        controlnet_data = data.get('controlnet', None)
         print(f"[DEBUG] /generate called with mode={mode}, genType={gen_type}, style={style}, prompt={prompt[:40]}")
         
-        # Skip main prompt validation for prompt chaining mode
-        if gen_type != 'prompt-chaining' and gen_type != 'batch':
+        # Skip main prompt validation for prompt chaining mode and batch mode
+        if gen_type != 'prompt-chaining' and gen_type != 'batch' and gen_type != 'controlnet':
             if not prompt:
                 print("[DEBUG] No prompt provided.")
                 return jsonify({'error': 'Please enter a scene description'}), 400
@@ -397,20 +441,34 @@ def generate_storyboard():
             style = 'cinematic'
         # Import configurations needed for both AI and demo modes
         try:
-            from diffusionlab.config import INPAINTING_CONFIG, BATCH_CONFIG
+            from diffusionlab.config import INPAINTING_CONFIG, BATCH_CONFIG, CONTROLNET_CONFIG
         except ImportError as e:
             print(f"[DEBUG] ImportError loading configs: {e}")
             return jsonify({'error': 'Configuration not available. Please ensure diffusionlab/config.py is present.'}), 500
+
+        # Additional validation for ControlNet mode
+        if gen_type == 'controlnet':
+            if not prompt:
+                print("[DEBUG] No prompt provided for ControlNet.")
+                return jsonify({'error': 'Please enter a scene description for ControlNet generation'}), 400
+            if len(prompt) < 10:
+                print("[DEBUG] Prompt too short for ControlNet.")
+                return jsonify({'error': 'Scene description should be at least 10 characters for ControlNet generation'}), 400
+            if not controlnet_image_path:
+                print("[DEBUG] No ControlNet reference image provided.")
+                return jsonify({'error': 'Please upload a reference image for ControlNet'}), 400
             
         if mode == 'ai':
             print("[DEBUG] Entering Full AI mode.")
             try:
-                from diffusionlab.tasks.storyboard import generate_scene_variations, generate_caption, pipe, inpaint_pipe, STYLE_PRESETS, IMAGE_CONFIG
+                from diffusionlab.tasks.storyboard import generate_scene_variations, generate_caption, pipe, inpaint_pipe, STYLE_PRESETS, IMAGE_CONFIG, load_models, generate_with_controlnet
+                # Load models if not already loaded
+                load_models()
             except ImportError as e:
                 print(f"[DEBUG] ImportError in AI mode: {e}")
                 return jsonify({'error': 'AI mode is not available. Please ensure diffusionlab/tasks/storyboard.py and dependencies are present.'}), 500
-            if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting' or gen_type == 'prompt-chaining' or gen_type == 'batch':
-                print(f"[DEBUG] AI {'Batch Generation' if gen_type == 'batch' else 'Prompt Chaining' if gen_type == 'prompt-chaining' else 'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
+            if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting' or gen_type == 'prompt-chaining' or gen_type == 'batch' or gen_type == 'controlnet':
+                print(f"[DEBUG] AI {'ControlNet' if gen_type == 'controlnet' else 'Batch Generation' if gen_type == 'batch' else 'Prompt Chaining' if gen_type == 'prompt-chaining' else 'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
                 # Generate a single AI image
                 scene = prompt
                 style_preset = STYLE_PRESETS.get(style, STYLE_PRESETS["cinematic"])
@@ -656,6 +714,49 @@ def generate_storyboard():
                         'layout': batch_layout,
                         'variationStrength': variation_strength
                     })
+                elif gen_type == 'controlnet' and controlnet_image_path and controlnet_data:
+                    print(f"[DEBUG] AI ControlNet mode")
+                    # Load the control image
+                    control_image = Image.open(controlnet_image_path).convert('RGB')
+                    control_image = resize_image(control_image)
+                    
+                    # Get ControlNet parameters
+                    control_model = controlnet_data.get('model', 'canny')
+                    control_strength = controlnet_data.get('controlStrength', 1.0)
+                    guidance_start = controlnet_data.get('guidanceStart', 0.0)
+                    guidance_end = controlnet_data.get('guidanceEnd', 1.0)
+                    
+                    print(f"[DEBUG] ControlNet parameters: model={control_model}, strength={control_strength}, guidance_start={guidance_start}, guidance_end={guidance_end}")
+                    
+                    try:
+                        # Use the proper ControlNet implementation
+                        from diffusionlab.tasks.storyboard import generate_with_controlnet
+                        
+                        image = generate_with_controlnet(
+                            prompt=scene,
+                            control_image=control_image,
+                            control_type=control_model,
+                            control_strength=control_strength,
+                            guidance_start=guidance_start,
+                            guidance_end=guidance_end,
+                            negative_prompt=negative_prompt,
+                            num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
+                            guidance_scale=IMAGE_CONFIG["guidance_scale"],
+                            width=IMAGE_CONFIG["width"],
+                            height=IMAGE_CONFIG["height"]
+                        )
+                        print(f"[DEBUG] ControlNet generation completed successfully")
+                    except Exception as e:
+                        print(f"[DEBUG] ControlNet generation failed: {e}")
+                        # Fallback to regular generation
+                        image = pipe(
+                            scene,
+                            negative_prompt=negative_prompt,
+                            num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
+                            guidance_scale=IMAGE_CONFIG["guidance_scale"],
+                            width=IMAGE_CONFIG["width"],
+                            height=IMAGE_CONFIG["height"]
+                        ).images[0]
                 else:
                     # Generate image using text-to-image
                     image = pipe(
@@ -685,7 +786,8 @@ def generate_storyboard():
                     'style': style,
                     'mode': mode,
                     'img2img': img2img_mode,
-                    'inpainting': inpainting_mode
+                    'inpainting': inpainting_mode,
+                    'controlnet': gen_type == 'controlnet'
                 })
             else:
                 print("[DEBUG] AI Storyboard mode.")
@@ -727,8 +829,8 @@ def generate_storyboard():
                 })
         else:
             print("[DEBUG] Entering Demo mode.")
-            if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting' or gen_type == 'prompt-chaining' or gen_type == 'batch':
-                print(f"[DEBUG] Demo {'Batch Generation' if gen_type == 'batch' else 'Prompt Chaining' if gen_type == 'prompt-chaining' else 'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
+            if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting' or gen_type == 'prompt-chaining' or gen_type == 'batch' or gen_type == 'controlnet':
+                print(f"[DEBUG] Demo {'ControlNet' if gen_type == 'controlnet' else 'Batch Generation' if gen_type == 'batch' else 'Prompt Chaining' if gen_type == 'prompt-chaining' else 'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
                 if inpainting_mode and inpainting_image_path and mask_data:
                     print(f"[DEBUG] Demo Inpainting mode")
                     # Load the input image and create a demo inpainting
@@ -880,6 +982,34 @@ def generate_storyboard():
                         'layout': batch_layout,
                         'variationStrength': variation_strength
                     })
+                elif gen_type == 'controlnet' and controlnet_image_path and controlnet_data:
+                    print(f"[DEBUG] Demo ControlNet mode")
+                    # Load the control image and create a demo ControlNet effect
+                    control_image = Image.open(controlnet_image_path).convert('RGB')
+                    control_image = resize_image(control_image)
+                    
+                    # Get ControlNet parameters
+                    control_model = controlnet_data.get('model', 'canny')
+                    control_strength = controlnet_data.get('controlStrength', 1.0)
+                    guidance_start = controlnet_data.get('guidanceStart', 0.0)
+                    guidance_end = controlnet_data.get('guidanceEnd', 1.0)
+                    
+                    # Create a demo ControlNet image by overlaying text on the control image
+                    demo_image = control_image.copy()
+                    draw = ImageDraw.Draw(demo_image)
+                    try:
+                        font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 24)
+                    except:
+                        font = ImageFont.load_default()
+                    
+                    # Add ControlNet indicator
+                    draw.text((10, 10), "Demo ControlNet", fill='yellow', font=font)
+                    draw.text((10, 40), f"Model: {control_model}", fill='cyan', font=font)
+                    draw.text((10, 70), f"Control Strength: {control_strength}", fill='cyan', font=font)
+                    draw.text((10, 100), f"Guidance: {guidance_start}-{guidance_end}", fill='cyan', font=font)
+                    draw.text((10, 130), f"Prompt: {prompt[:30]}...", fill='white', font=font)
+                    
+                    image = demo_image
                 else:
                     image = create_demo_image(prompt, style, 1)
                 
@@ -901,7 +1031,8 @@ def generate_storyboard():
                     'style': style,
                     'mode': mode,
                     'img2img': img2img_mode,
-                    'inpainting': inpainting_mode
+                    'inpainting': inpainting_mode,
+                    'controlnet': gen_type == 'controlnet'
                 })
             else:
                 print("[DEBUG] Demo Storyboard mode.")

@@ -6,6 +6,7 @@ Configuration file for Storyboard Generator
 MODEL_CONFIG = {
     "diffusion_model": "stabilityai/stable-diffusion-xl-base-1.0",
     "text_model": "stabilityai/stablelm-3b-4e1t",
+    "caption_model": "stabilityai/stablelm-3b-4e1t",
     "torch_dtype": "float32",
     "use_safetensors": True,
     "variant": "fp16"
@@ -236,6 +237,52 @@ STORY_EVOLUTION_TEMPLATES = [
         ]
     }
 ]
+
+# ControlNet Settings
+CONTROLNET_CONFIG = {
+    "models": {
+        "canny": {
+            "name": "lllyasviel/control_v11p_sd15_canny",
+            "description": "Edge detection for precise line control",
+            "use_case": "Line art, architectural drawings, precise outlines"
+        },
+        "depth": {
+            "name": "lllyasviel/control_v11f1p_sd15_depth",
+            "description": "Depth map control for 3D-like generation",
+            "use_case": "3D scenes, architectural visualization, spatial control"
+        },
+        "pose": {
+            "name": "lllyasviel/control_v11p_sd15_openpose",
+            "description": "Human pose estimation and control",
+            "use_case": "Character poses, figure drawing, animation"
+        },
+        "segmentation": {
+            "name": "lllyasviel/control_v11p_sd15_seg",
+            "description": "Semantic segmentation for object placement",
+            "use_case": "Object placement, scene composition, layout control"
+        }
+    },
+    "default_model": "canny",
+    "control_strength": 1.0,
+    "guidance_start": 0.0,
+    "guidance_end": 1.0,
+    "preprocessor_settings": {
+        "canny": {
+            "low_threshold": 100,
+            "high_threshold": 200
+        },
+        "depth": {
+            "bg_threshold": 0.1
+        },
+        "pose": {
+            "detect_resolution": 512,
+            "image_resolution": 512
+        },
+        "segmentation": {
+            "detect_resolution": 512
+        }
+    }
+}
 
 # Validation Rules
 VALIDATION_RULES = {

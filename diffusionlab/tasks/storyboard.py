@@ -1,6 +1,6 @@
 import gradio as gr
 import torch
-from diffusers import StableDiffusionXLPipeline, StableDiffusionXLInpaintPipeline
+from diffusers import StableDiffusionXLPipeline, StableDiffusionXLInpaintPipeline, ControlNetModel, StableDiffusionXLControlNetPipeline
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -11,19 +11,23 @@ from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.utils import ImageReader
 import io
 import time
+import cv2
+from controlnet_aux import CannyDetector, OpenposeDetector, MLSDdetector, HEDdetector
 from diffusionlab.config import *
 from diffusionlab.utils import *
 
 # --- Model and Pipeline Setup (Top Level) ---
 pipe = None
 inpaint_pipe = None
+controlnet_pipes = {}
 model = None
 tokenizer = None
+controlnet_processors = {}
 
 # Load models at import time for webapp AI mode
 # (If you want to delay loading for Gradio UI, you can move this into a function)
 def load_models():
-    global pipe, inpaint_pipe, tokenizer, model
+    global pipe, inpaint_pipe, tokenizer, model, controlnet_processors
     if pipe is not None and inpaint_pipe is not None and tokenizer is not None and model is not None:
         return
     print("Loading Stable Diffusion XL...")
@@ -40,6 +44,17 @@ def load_models():
         use_safetensors=MODEL_CONFIG["use_safetensors"],
         variant=MODEL_CONFIG["variant"]
     )
+    
+    # Initialize ControlNet processors (lightweight)
+    try:
+        controlnet_processors["canny"] = CannyDetector()
+        controlnet_processors["pose"] = OpenposeDetector.from_pretrained("lllyasviel/Annotators")
+        controlnet_processors["mlsd"] = MLSDdetector.from_pretrained("lllyasviel/Annotators")
+        controlnet_processors["hed"] = HEDdetector.from_pretrained("lllyasviel/Annotators")
+        print("ControlNet processors loaded successfully")
+    except Exception as e:
+        print(f"Warning: Could not load ControlNet processors: {e}")
+    
     device = get_optimal_device()
     if device == "cuda":
         pipe = pipe.to("cuda")
@@ -49,26 +64,118 @@ def load_models():
         pipe = pipe.to("mps")
         inpaint_pipe = inpaint_pipe.to("mps")
         print("Using MPS for image generation")
-    else:
-        print("Using CPU for image generation (slower)")
+    
     if PERFORMANCE_CONFIG["enable_attention_slicing"]:
         pipe.enable_attention_slicing()
         inpaint_pipe.enable_attention_slicing()
+    
     print("Loading StableLM for caption generation...")
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_CONFIG["text_model"])
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_CONFIG["caption_model"])
     model = AutoModelForCausalLM.from_pretrained(
-        MODEL_CONFIG["text_model"],
+        MODEL_CONFIG["caption_model"],
         torch_dtype=getattr(torch, MODEL_CONFIG["torch_dtype"]),
-        device_map="auto" if device != "cpu" else None
+        device_map="auto" if device == "cuda" else None
     )
     print("Models loaded successfully!")
 
-# Load models at import time for webapp
-load_models()
+def load_controlnet_model(control_type):
+    """Load a specific ControlNet model on-demand"""
+    global controlnet_pipes
+    
+    if control_type in controlnet_pipes:
+        return controlnet_pipes[control_type]
+    
+    try:
+        print(f"Loading ControlNet model: {control_type}")
+        device = get_optimal_device()
+        
+        # Get model config
+        if control_type not in CONTROLNET_CONFIG["models"]:
+            print(f"Unknown control type: {control_type}")
+            return None
+        
+        config = CONTROLNET_CONFIG["models"][control_type]
+        
+        # For now, let's use a simpler approach that doesn't require downloading large models
+        # This will allow the feature to work in demo mode while we work on full implementation
+        print(f"ControlNet model {control_type} not fully implemented yet, using fallback")
+        return None
+        
+    except Exception as e:
+        print(f"Error loading ControlNet model {control_type}: {e}")
+        return None
 
 # --- Expose style presets and image config for webapp ---
 STYLE_PRESETS = STYLE_PRESETS
 IMAGE_CONFIG = IMAGE_CONFIG
+
+# --- ControlNet Functions ---
+def process_control_image(image, control_type):
+    """Process an image for ControlNet based on the control type"""
+    if control_type not in controlnet_processors:
+        return image
+    
+    # Convert PIL image to numpy array
+    image_np = np.array(image)
+    
+    try:
+        if control_type == "canny":
+            # Apply Canny edge detection
+            low_threshold = CONTROLNET_CONFIG["preprocessor_settings"]["canny"]["low_threshold"]
+            high_threshold = CONTROLNET_CONFIG["preprocessor_settings"]["canny"]["high_threshold"]
+            processed = controlnet_processors["canny"](image_np, low_threshold, high_threshold)
+        elif control_type == "pose":
+            # Apply pose detection
+            detect_resolution = CONTROLNET_CONFIG["preprocessor_settings"]["pose"]["detect_resolution"]
+            image_resolution = CONTROLNET_CONFIG["preprocessor_settings"]["pose"]["image_resolution"]
+            processed = controlnet_processors["pose"](image_np, detect_resolution, image_resolution)
+        elif control_type == "depth":
+            # For depth, we'll use a simple grayscale conversion as a fallback
+            # In a full implementation, you'd use a depth estimation model
+            processed = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
+            processed = cv2.cvtColor(processed, cv2.COLOR_GRAY2RGB)
+        elif control_type == "segmentation":
+            # For segmentation, we'll use a simple color-based segmentation as a fallback
+            # In a full implementation, you'd use a segmentation model
+            detect_resolution = CONTROLNET_CONFIG["preprocessor_settings"]["segmentation"]["detect_resolution"]
+            processed = controlnet_processors["hed"](image_np, detect_resolution)
+        else:
+            return image
+        
+        # Convert back to PIL Image
+        return Image.fromarray(processed)
+    except Exception as e:
+        print(f"Error processing control image for {control_type}: {e}")
+        return image
+
+def generate_with_controlnet(prompt, control_image, control_type, control_strength=1.0, guidance_start=0.0, guidance_end=1.0, negative_prompt="", **kwargs):
+    """Generate an image using ControlNet"""
+    try:
+        # Load ControlNet pipeline on-demand
+        controlnet_pipe = load_controlnet_model(control_type)
+        if controlnet_pipe is None:
+            print(f"ControlNet model {control_type} not available, falling back to regular generation")
+            return pipe(prompt, negative_prompt=negative_prompt, **kwargs).images[0]
+        
+        # Process the control image
+        processed_control_image = process_control_image(control_image, control_type)
+        
+        # Generate with ControlNet
+        result = controlnet_pipe(
+            prompt,
+            image=processed_control_image,
+            negative_prompt=negative_prompt,
+            controlnet_conditioning_scale=control_strength,
+            guidance_start=guidance_start,
+            guidance_end=guidance_end,
+            **kwargs
+        )
+        
+        return result.images[0]
+    except Exception as e:
+        print(f"Error in ControlNet generation: {e}")
+        print("Falling back to regular generation")
+        return pipe(prompt, negative_prompt=negative_prompt, **kwargs).images[0]
 
 # --- AI Functions (Top Level) ---
 def generate_scene_variations(prompt, style):

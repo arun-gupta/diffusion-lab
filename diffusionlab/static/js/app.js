@@ -7,6 +7,7 @@ class StoryboardGenerator {
         this._aiCancelled = false;
         this.uploadedImagePath = null;
         this.inpaintingImagePath = null;
+        this.controlnetImagePath = null;
         this.canvas = null;
         this.ctx = null;
         this.isDrawing = false;
@@ -90,6 +91,28 @@ class StoryboardGenerator {
             document.getElementById('variationStrengthValue').textContent = e.target.value;
         });
 
+        // ControlNet functionality
+        document.getElementById('controlStrength').addEventListener('input', (e) => {
+            document.getElementById('controlStrengthValue').textContent = e.target.value;
+        });
+
+        document.getElementById('guidanceStart').addEventListener('input', (e) => {
+            document.getElementById('guidanceStartValue').textContent = e.target.value;
+        });
+
+        document.getElementById('guidanceEnd').addEventListener('input', (e) => {
+            document.getElementById('guidanceEndValue').textContent = e.target.value;
+        });
+
+        // ControlNet functionality
+        document.getElementById('controlnetImage').addEventListener('change', (e) => {
+            this.handleControlnetImageUpload(e);
+        });
+
+        document.getElementById('removeControlnetImage').addEventListener('click', () => {
+            this.removeControlnetImage();
+        });
+
         // Inpainting functionality
         document.getElementById('inpaintingImage').addEventListener('change', (e) => {
             this.handleInpaintingImageUpload(e);
@@ -150,6 +173,58 @@ class StoryboardGenerator {
         });
     }
 
+    async handleControlnetImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            this.updateStatus('Please select a valid image file', 'error');
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await fetch('/upload-controlnet', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                this.controlnetImagePath = data.image_path;
+                this.showControlnetPreview(file);
+                this.updateStatus('ControlNet reference image uploaded successfully', 'success');
+            } else {
+                const errorData = await response.json();
+                this.updateStatus(errorData.error || 'Failed to upload image', 'error');
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            this.updateStatus('Upload failed. Please try again.', 'error');
+        }
+    }
+
+    showControlnetPreview(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const previewImg = document.getElementById('controlnetPreviewImg');
+            const previewContainer = document.getElementById('controlnetPreview');
+            
+            previewImg.src = e.target.result;
+            previewContainer.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    removeControlnetImage() {
+        this.controlnetImagePath = null;
+        document.getElementById('controlnetImage').value = '';
+        document.getElementById('controlnetPreview').style.display = 'none';
+        this.updateStatus('ControlNet reference image removed', 'info');
+    }
+
     updateStyleDescription() {
         const styleSelect = document.getElementById('style');
         const selectedOption = styleSelect.options[styleSelect.selectedIndex];
@@ -179,6 +254,7 @@ class StoryboardGenerator {
         document.getElementById('inpaintingSection').style.display = 'none';
         document.getElementById('promptChainingSection').style.display = 'none';
         document.getElementById('batchSection').style.display = 'none';
+        document.getElementById('controlnetSection').style.display = 'none';
         document.getElementById('mainPromptSection').style.display = 'block';
         
         if (genType === 'single') {
@@ -213,6 +289,14 @@ class StoryboardGenerator {
             document.getElementById('storyboardContainer').classList.remove('d-none');
             document.getElementById('batchSection').style.display = 'block';
             // Clear any uploaded images when switching to batch mode
+            this.removeUploadedImage();
+            this.removeInpaintingImage();
+        } else if (genType === 'controlnet') {
+            document.getElementById('captionsCard').classList.add('d-none');
+            document.getElementById('singleImageContainer').classList.add('d-none');
+            document.getElementById('storyboardContainer').classList.remove('d-none');
+            document.getElementById('controlnetSection').style.display = 'block';
+            // Clear any uploaded images when switching to controlnet mode
             this.removeUploadedImage();
             this.removeInpaintingImage();
         } else if (genType === 'prompt-chaining') {
@@ -253,6 +337,7 @@ class StoryboardGenerator {
                                  genType === 'inpainting' ? 'Ready to fill masked areas' :
                                  genType === 'prompt-chaining' ? 'Ready to create story evolution' :
                                  genType === 'batch' ? 'Ready to generate variations' :
+                                 genType === 'controlnet' ? 'Ready to generate with precise control' :
                                  genType === 'single' ? 'Ready to generate art' :
                                  'Ready to generate storyboard';
             statusElement.textContent = defaultMessage;
@@ -266,6 +351,7 @@ class StoryboardGenerator {
         const storyboardTab = document.getElementById('storyboard-tab');
         const singleTab = document.getElementById('single-tab');
         const batchTab = document.getElementById('batch-tab');
+        const controlnetTab = document.getElementById('controlnet-tab');
         const img2imgTab = document.getElementById('img2img-tab');
         const inpaintingTab = document.getElementById('inpainting-tab');
         const promptChainingTab = document.getElementById('prompt-chaining-tab');
@@ -274,6 +360,7 @@ class StoryboardGenerator {
         const storyboardExamples = document.getElementById('storyboard-examples');
         const singleExamples = document.getElementById('single-examples');
         const batchExamples = document.getElementById('batch-examples');
+        const controlnetExamples = document.getElementById('controlnet-examples');
         const img2imgExamples = document.getElementById('img2img-examples');
         const inpaintingExamples = document.getElementById('inpainting-examples');
         const promptChainingExamples = document.getElementById('prompt-chaining-examples');
@@ -315,6 +402,7 @@ class StoryboardGenerator {
             // Enable only batch generation examples
             this.disableExampleTab(storyboardTab, 'Storyboard');
             this.disableExampleTab(singleTab, 'Single-Image Art');
+            this.disableExampleTab(controlnetTab, 'ControlNet');
             this.disableExampleTab(img2imgTab, 'Image-to-Image');
             this.disableExampleTab(inpaintingTab, 'Inpainting');
             this.disableExampleTab(promptChainingTab, 'Prompt Chaining');
@@ -322,6 +410,19 @@ class StoryboardGenerator {
             // Show batch examples by default
             if (batchTab && !batchTab.classList.contains('active')) {
                 batchTab.click();
+            }
+        } else if (genType === 'controlnet') {
+            // Enable only controlnet examples
+            this.disableExampleTab(storyboardTab, 'Storyboard');
+            this.disableExampleTab(singleTab, 'Single-Image Art');
+            this.disableExampleTab(batchTab, 'Batch Generation');
+            this.disableExampleTab(img2imgTab, 'Image-to-Image');
+            this.disableExampleTab(inpaintingTab, 'Inpainting');
+            this.disableExampleTab(promptChainingTab, 'Prompt Chaining');
+            
+            // Show controlnet examples by default
+            if (controlnetTab && !controlnetTab.classList.contains('active')) {
+                controlnetTab.click();
             }
         } else if (genType === 'img2img') {
             // Enable only img2img examples
@@ -387,6 +488,7 @@ class StoryboardGenerator {
                 'storyboard': 'Storyboard',
                 'single': 'Single-Image Art',
                 'batch': 'Batch Generation',
+                'controlnet': 'ControlNet',
                 'img2img': 'Image-to-Image',
                 'inpainting': 'Inpainting',
                 'prompt-chaining': 'Story Evolution'
@@ -403,6 +505,8 @@ class StoryboardGenerator {
                 indicator.classList.add('bg-success');
             } else if (genType === 'batch') {
                 indicator.classList.add('bg-secondary');
+            } else if (genType === 'controlnet') {
+                indicator.classList.add('bg-dark');
             } else if (genType === 'img2img') {
                 indicator.classList.add('bg-info');
             } else if (genType === 'inpainting') {
@@ -472,6 +576,22 @@ class StoryboardGenerator {
             }
         }
 
+        // Additional validation for controlnet mode
+        if (genType === 'controlnet') {
+            if (!prompt) {
+                this.updateStatus('Please enter a scene description for ControlNet generation', 'error');
+                return;
+            }
+            if (prompt.length < 10) {
+                this.updateStatus('Scene description should be at least 10 characters for ControlNet generation', 'error');
+                return;
+            }
+            if (!this.controlnetImagePath) {
+                this.updateStatus('Please upload a reference image for ControlNet', 'error');
+                return;
+            }
+        }
+
         // Show loading state
         if (mode === 'ai') {
             this._aiCancelled = false;
@@ -483,6 +603,7 @@ class StoryboardGenerator {
                              genType === 'inpainting' ? 'Filling masked areas...' :
                              genType === 'prompt-chaining' ? 'Creating story evolution...' :
                              genType === 'batch' ? 'Generating variations...' :
+                             genType === 'controlnet' ? 'Generating with precise control...' :
                              genType === 'single' ? 'Generating art...' : 
                              'Generating storyboard...';
         this.updateStatus(statusMessage, 'info');
@@ -532,6 +653,22 @@ class StoryboardGenerator {
                 };
             }
 
+            // Get ControlNet data
+            let controlnetData = null;
+            if (genType === 'controlnet') {
+                const controlnetModel = document.getElementById('controlnetModel').value;
+                const controlStrength = parseFloat(document.getElementById('controlStrength').value);
+                const guidanceStart = parseFloat(document.getElementById('guidanceStart').value);
+                const guidanceEnd = parseFloat(document.getElementById('guidanceEnd').value);
+                
+                controlnetData = {
+                    model: controlnetModel,
+                    controlStrength: controlStrength,
+                    guidanceStart: guidanceStart,
+                    guidanceEnd: guidanceEnd
+                };
+            }
+
             const response = await fetch('/generate', {
                 method: 'POST',
                 headers: {
@@ -546,10 +683,12 @@ class StoryboardGenerator {
                     inpainting: inpainting,
                     inputImagePath: this.uploadedImagePath,
                     inpaintingImagePath: this.inpaintingImagePath,
+                    controlnetImagePath: this.controlnetImagePath,
                     maskData: maskData,
                     strength: strength,
                     promptChain: promptChainData,
-                    batch: batchData
+                    batch: batchData,
+                    controlnet: controlnetData
                 })
             });
 
@@ -562,7 +701,7 @@ class StoryboardGenerator {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                if (genType === 'single' || genType === 'img2img' || genType === 'inpainting' || genType === 'prompt-chaining' || genType === 'batch') {
+                if (genType === 'single' || genType === 'img2img' || genType === 'inpainting' || genType === 'prompt-chaining' || genType === 'batch' || genType === 'controlnet') {
                     this.displaySingleImage(data);
                 } else {
                     this.displayStoryboard(data);

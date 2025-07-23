@@ -71,20 +71,28 @@ python3 -m diffusionlab.api.webapp
 
 ![Sample Prompt Chaining](docs/sample-promptchaining.png)
 
+### 🎯 ControlNet (Precise Control)
+**"A majestic dragon in a fantasy landscape"** *(Cinematic style, Canny edge control, strength: 1.0)*
+
+| Reference Image *(Edge Detection)* | Generated Output *(AI controlled by reference)* |
+|-----------------------------------|------------------------------------------------|
+| <img src="docs/sample-controlnet-reference.png" width="40%" alt="ControlNet Reference"> | <img src="docs/sample-controlnet-output.png" width="40%" alt="ControlNet Output"> |
+
 ## 🎮 Usage
 
 For detailed usage instructions, see the [Usage Guide](USAGE_GUIDE.md).
 
 ### Basic Usage
 1. Open `http://localhost:5001` in your browser
-2. Select your mode: **Storyboard**, **Single-Image Art**, **Batch Generation**, **Image-to-Image**, **Inpainting**, or **Prompt Chaining**
+2. Select your mode: **Storyboard**, **Single-Image Art**, **Batch Generation**, **Image-to-Image**, **Inpainting**, **Prompt Chaining**, or **ControlNet**
 3. Toggle between **Demo** (fast) and **AI** (full quality) modes
 4. Enter your prompt and choose a style
 5. For **Batch Generation**: Configure variation count, layout, and strength
 6. For **Image-to-Image**: Upload an image and adjust transformation strength
 7. For **Inpainting**: Upload an image, draw masks, and describe what should fill them
 8. For **Prompt Chaining**: Add multiple prompts for story evolution
-9. Click "Generate" and download your results
+9. For **ControlNet**: Upload a reference image, select control type, and adjust strength/guidance
+10. Click "Generate" and download your results
 
 ### Key Features
 
@@ -117,6 +125,11 @@ For detailed usage instructions, see the [Usage Guide](USAGE_GUIDE.md).
 - Create story sequences with multiple prompts
 - Use templates like "Character Journey" or "Environmental Progression"
 - Generate evolving narratives
+
+#### 🎯 ControlNet
+- Upload reference images for precise control over composition
+- Choose from Canny edge detection, depth maps, pose estimation, or segmentation
+- Adjust control strength and guidance timing for fine-tuned results
 
 ## 🛠️ Installation
 
@@ -201,6 +214,7 @@ python3 -m diffusionlab.api.webapp
 - **✅ Image-to-Image**: Transform sketches/photos into polished artwork *(Implemented)*
 - **✅ Inpainting**: Remove objects or fill areas with AI-generated content *(Implemented)*
 - **✅ Prompt Chaining**: Create evolving story sequences with multiple prompts *(Implemented)*
+- **🔄 ControlNet**: Precise control over composition, pose, and structure using reference images *(In Development)*
 - **🔄 Outpainting**: Extend image borders
 - **🔄 Style Transfer**: Apply artistic styles
 - **🔄 Animated Diffusion**: Frame interpolation

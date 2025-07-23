@@ -32,6 +32,7 @@
                                     <option value="storyboard">Storyboard (5 panels)</option>
                                     <option value="single">Single-Image Art</option>
                                     <option value="batch">Batch Generation (Multiple Variations)</option>
+                                    <option value="controlnet">ControlNet (Precise Control)</option>
                                     <option value="img2img">Image-to-Image</option>
                                     <option value="inpainting">Inpainting (Content-aware Fill)</option>
                                     <option value="prompt-chaining">Prompt Chaining (Story Evolution)</option>
@@ -254,6 +255,61 @@
                                 </div>
                             </div>
 
+                            <!-- ControlNet Section -->
+                            <div class="mb-3" id="controlnetSection" style="display: none;">
+                                <label class="form-label">ControlNet Settings:</label>
+                                <div class="form-text mb-2">Upload a reference image to control the composition, pose, or structure of your generation.</div>
+                                
+                                <div class="mb-3">
+                                    <label for="controlnetImage" class="form-label">Reference Image:</label>
+                                    <input type="file" class="form-control" id="controlnetImage" accept="image/*">
+                                    <div class="form-text">Upload an image to use as a control reference (line art, depth map, pose, etc.)</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="controlnetModel" class="form-label">Control Type:</label>
+                                    <select class="form-select" id="controlnetModel">
+                                        <option value="canny">Canny Edge Detection</option>
+                                        <option value="depth">Depth Map</option>
+                                        <option value="pose">Human Pose</option>
+                                        <option value="segmentation">Semantic Segmentation</option>
+                                    </select>
+                                    <div class="form-text">Choose the type of control you want to apply</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="controlStrength" class="form-label">Control Strength: <span id="controlStrengthValue">1.0</span></label>
+                                    <input type="range" class="form-range" id="controlStrength" min="0.0" max="2.0" step="0.1" value="1.0">
+                                    <div class="form-text">
+                                        <small>0.0 = No control, 1.0 = Full control, 2.0 = Strong control</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="guidanceStart" class="form-label">Guidance Start: <span id="guidanceStartValue">0.0</span></label>
+                                    <input type="range" class="form-range" id="guidanceStart" min="0.0" max="1.0" step="0.1" value="0.0">
+                                    <div class="form-text">
+                                        <small>When to start applying control (0.0 = beginning, 1.0 = end)</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="guidanceEnd" class="form-label">Guidance End: <span id="guidanceEndValue">1.0</span></label>
+                                    <input type="range" class="form-range" id="guidanceEnd" min="0.0" max="1.0" step="0.1" value="1.0">
+                                    <div class="form-text">
+                                        <small>When to stop applying control (0.0 = beginning, 1.0 = end)</small>
+                                    </div>
+                                </div>
+                                
+                                <!-- ControlNet Preview -->
+                                <div class="mt-2" id="controlnetPreview" style="display: none;">
+                                    <img id="controlnetPreviewImg" class="img-fluid rounded" style="max-height: 200px;">
+                                    <button type="button" class="btn btn-sm btn-outline-danger mt-1" id="removeControlnetImage">
+                                        <i class="fas fa-times"></i> Remove Image
+                                    </button>
+                                </div>
+                            </div>
+
                             <button type="submit" class="btn btn-primary btn-lg w-100" id="generateBtn">
                                 <i class="fas fa-magic"></i> Generate
                             </button>
@@ -288,6 +344,11 @@
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch-examples" type="button" role="tab">
                                         <i class="fas fa-layer-group"></i> Batch
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="controlnet-tab" data-bs-toggle="tab" data-bs-target="#controlnet-examples" type="button" role="tab">
+                                        <i class="fas fa-crosshairs"></i> ControlNet
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
@@ -417,6 +478,32 @@
                                         <button class="list-group-item list-group-item-action example-prompt" 
                                                 data-prompt="A serene mountain landscape at sunset">
                                             🏔️ Mountain Landscape Variations
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- ControlNet Examples -->
+                                <div class="tab-pane fade" id="controlnet-examples" role="tabpanel">
+                                    <div class="list-group list-group-flush mt-2">
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A majestic dragon in a fantasy landscape">
+                                            🐉 Canny Edge: Dragon with line art control
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A futuristic cityscape with towering buildings">
+                                            🏙️ Depth Map: 3D city with depth control
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A warrior in battle stance with sword drawn">
+                                            ⚔️ Pose Control: Character with pose reference
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A magical forest with glowing mushrooms and fairy lights">
+                                            🌲 Segmentation: Scene with object placement control
+                                        </button>
+                                        <button class="list-group-item list-group-item-action example-prompt" 
+                                                data-prompt="A cyberpunk character in neon-lit alley">
+                                            🌃 Edge Detection: Character with precise outline control
                                         </button>
                                     </div>
                                 </div>

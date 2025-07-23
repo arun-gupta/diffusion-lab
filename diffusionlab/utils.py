@@ -9,12 +9,16 @@ import os
 
 def get_optimal_device():
     """Determine the best available device for model inference"""
-    if torch.cuda.is_available():
-        return "cuda"
-    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-        return "mps"
-    else:
-        return "cpu"
+    # For now, use CPU to avoid MPS device issues
+    return "cpu"
+    
+    # Original device detection (commented out for now)
+    # if torch.cuda.is_available():
+    #     return "cuda"
+    # elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+    #     return "mps"
+    # else:
+    #     return "cpu"
 
 def create_negative_prompt(style):
     """Generate negative prompts based on style to improve image quality"""
