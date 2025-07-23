@@ -100,43 +100,126 @@ def create_demo_image(prompt, style, panel_num):
     draw.text((width//2, height - 50), "Demo Mode", fill='yellow', anchor='mm')
     return image
 
-def create_storyboard_layout(images, captions):
-    """Create a horizontal layout of the 5 images with captions"""
+def create_storyboard_layout(images, captions, layout="horizontal"):
+    """Create a flexible layout of images with captions"""
+    if not images:
+        return None
+    
     img_width, img_height = images[0].size
     caption_height = 80
     spacing = 20
+    num_images = len(images)
     
-    # Create the storyboard canvas
-    total_width = img_width * 5 + spacing * 4
-    total_height = img_height + caption_height + spacing
-    
-    storyboard = Image.new('RGB', (total_width, total_height), 'white')
-    draw = ImageDraw.Draw(storyboard)
-    
-    # Try to load a font
-    try:
-        font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 16)
-    except:
+    if layout == "horizontal":
+        # Create horizontal layout
+        total_width = img_width * num_images + spacing * (num_images - 1)
+        total_height = img_height + caption_height + spacing
+        
+        storyboard = Image.new('RGB', (total_width, total_height), 'white')
+        draw = ImageDraw.Draw(storyboard)
+        
+        # Try to load a font
         try:
-            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16)
+            font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 16)
         except:
-            font = ImageFont.load_default()
+            try:
+                font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16)
+            except:
+                font = ImageFont.load_default()
+        
+        # Place images and captions
+        for i, (image, caption) in enumerate(zip(images, captions)):
+            x = i * (img_width + spacing)
+            
+            # Paste image
+            storyboard.paste(image, (x, 0))
+            
+            # Draw caption background
+            caption_y = img_height + 10
+            draw.rectangle([x, caption_y, x + img_width, caption_y + caption_height - 10], 
+                          fill='#f8f9fa', outline='#dee2e6')
+            
+            # Draw caption text
+            draw.text((x + 10, caption_y + 10), f"Variation {i+1}: {caption}", 
+                     fill='black', font=font)
     
-    # Place images and captions
-    for i, (image, caption) in enumerate(zip(images, captions)):
-        x = i * (img_width + spacing)
+    elif layout == "vertical":
+        # Create vertical layout
+        total_width = img_width + 200  # Extra space for captions
+        total_height = (img_height + caption_height + spacing) * num_images
         
-        # Paste image
-        storyboard.paste(image, (x, 0))
+        storyboard = Image.new('RGB', (total_width, total_height), 'white')
+        draw = ImageDraw.Draw(storyboard)
         
-        # Draw caption background
-        caption_y = img_height + 10
-        draw.rectangle([x, caption_y, x + img_width, caption_y + caption_height - 10], 
-                      fill='#f8f9fa', outline='#dee2e6')
+        # Try to load a font
+        try:
+            font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 16)
+        except:
+            try:
+                font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16)
+            except:
+                font = ImageFont.load_default()
         
-        # Draw caption text
-        draw.text((x + 10, caption_y + 10), f"Panel {i+1}: {caption}", 
-                 fill='black', font=font)
+        # Place images and captions
+        for i, (image, caption) in enumerate(zip(images, captions)):
+            y = i * (img_height + caption_height + spacing)
+            
+            # Paste image
+            storyboard.paste(image, (0, y))
+            
+            # Draw caption background
+            caption_x = img_width + 10
+            caption_y = y + 10
+            draw.rectangle([caption_x, caption_y, caption_x + 190, caption_y + caption_height - 10], 
+                          fill='#f8f9fa', outline='#dee2e6')
+            
+            # Draw caption text
+            draw.text((caption_x + 10, caption_y + 10), f"Variation {i+1}: {caption}", 
+                     fill='black', font=font)
+    
+    elif layout == "grid":
+        # Create grid layout (2 columns)
+        cols = 2
+        rows = (num_images + cols - 1) // cols  # Ceiling division
+        
+        total_width = img_width * cols + spacing * (cols - 1)
+        total_height = (img_height + caption_height + spacing) * rows
+        
+        storyboard = Image.new('RGB', (total_width, total_height), 'white')
+        draw = ImageDraw.Draw(storyboard)
+        
+        # Try to load a font
+        try:
+            font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 16)
+        except:
+            try:
+                font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16)
+            except:
+                font = ImageFont.load_default()
+        
+        # Place images and captions
+        for i, (image, caption) in enumerate(zip(images, captions)):
+            row = i // cols
+            col = i % cols
+            
+            x = col * (img_width + spacing)
+            y = row * (img_height + caption_height + spacing)
+            
+            # Paste image
+            storyboard.paste(image, (x, y))
+            
+            # Draw caption background
+            caption_y_pos = y + img_height + 10
+            draw.rectangle([x, caption_y_pos, x + img_width, caption_y_pos + caption_height - 10], 
+                          fill='#f8f9fa', outline='#dee2e6')
+            
+            # Draw caption text
+            draw.text((x + 10, caption_y_pos + 10), f"Variation {i+1}: {caption}", 
+                     fill='black', font=font)
+    
+    else:
+        # Default to horizontal layout
+        return create_storyboard_layout(images, captions, "horizontal")
     
     return storyboard
 
@@ -692,7 +775,7 @@ def generate_storyboard():
                         captions.append(caption)
                     
                     # Create batch layout
-                    storyboard = create_storyboard_layout(images, captions)
+                    storyboard = create_storyboard_layout(images, captions, batch_layout)
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                     filename = f"batch_{timestamp}.png"
                     filepath = os.path.join(get_storyboards_dir(), filename)
@@ -962,7 +1045,7 @@ def generate_storyboard():
                         captions.append(f"Variation {i+1}: {prompt[:50]}...")
                     
                     # Create storyboard layout for the batch
-                    storyboard = create_storyboard_layout(images, captions)
+                    storyboard = create_storyboard_layout(images, captions, batch_layout)
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                     filename = f"demo_batch_{timestamp}.png"
                     filepath = os.path.join(get_storyboards_dir(), filename)
