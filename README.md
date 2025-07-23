@@ -31,7 +31,88 @@ python3 -m diffusionlab.api.webapp
 - **🎯 ControlNet**: Precise control over composition, pose, and structure using reference images
 - **📱 Web Interface**: Modern, responsive UI with real-time generation
 
+## 🤖 AI Models
+
+This application uses state-of-the-art AI models to power its generation capabilities:
+
+### Primary Models
+
+#### **Stable Diffusion XL** (`stabilityai/stable-diffusion-xl-base-1.0`)
+- **Purpose**: Main image generation model
+- **Used for**: Text-to-image generation, image-to-image transformation
+- **Configuration**: fp16 variant with safetensors format
+- **Performance**: Optimized for high-quality 512×512 image generation
+
+#### **Stable Diffusion XL Inpainting** (`stabilityai/stable-diffusion-xl-base-1.0`)
+- **Purpose**: Specialized inpainting pipeline for content-aware fill
+- **Used for**: Object removal, background replacement, creative editing
+- **Features**: Precise mask-based generation with seamless blending
+
+#### **StableLM 3B 4E1T** (`stabilityai/stablelm-3b-4e1t`)
+- **Purpose**: Text generation and caption creation
+- **Used for**: 
+  - Generating scene variations for storyboards
+  - Creating descriptive captions for generated images
+  - Text processing and prompt enhancement
+- **Size**: 3 billion parameters optimized for text tasks
+
+### ControlNet Models (Advanced Control)
+
+The app includes configuration for ControlNet models for precise generation control:
+
+#### **Edge Detection** (`lllyasviel/control_v11p_sd15_canny`)
+- **Use case**: Line art, architectural drawings, precise outlines
+- **Best for**: Converting sketches to finished artwork
+
+#### **Depth Map** (`lllyasviel/control_v11f1p_sd15_depth`)
+- **Use case**: 3D scenes, architectural visualization, spatial control
+- **Best for**: Creating images with precise depth and perspective
+
+#### **Human Pose** (`lllyasviel/control_v11p_sd15_openpose`)
+- **Use case**: Character poses, figure drawing, animation
+- **Best for**: Maintaining specific poses from reference images
+
+#### **Semantic Segmentation** (`lllyasviel/control_v11p_sd15_seg`)
+- **Use case**: Object placement, scene composition, layout control
+- **Best for**: Controlling where objects appear in the scene
+
+### Supporting Libraries
+
+#### **ControlNet Auxiliary Processors**
+- **CannyDetector**: Edge detection preprocessing
+- **OpenposeDetector**: Human pose estimation
+- **MLSDdetector**: Line detection for architectural elements
+- **HEDdetector**: Holistically-nested edge detection
+
+### Model Loading Strategy
+
+- **Primary models** (SDXL, SDXL Inpainting, StableLM) are loaded at startup for AI mode
+- **ControlNet models** are loaded on-demand to conserve memory
+- **Demo mode** uses placeholder generation without loading heavy models
+- **Fallback mechanisms** ensure the app works even if some models fail to load
+
+### Technical Specifications
+
+- **Torch dtype**: float32 (configurable)
+- **Model format**: Safetensors for faster loading
+- **Variant**: fp16 for SDXL (optimized for memory efficiency)
+- **Device optimization**: CUDA, MPS (Apple Silicon), or CPU fallback
+- **Memory management**: Attention slicing enabled for performance
+- **Model size**: ~10GB total for all models
+
+### Performance Notes
+
+- **GPU recommended**: CUDA-compatible GPU or Apple Silicon for optimal performance
+- **Memory requirements**: 8GB+ RAM (16GB+ recommended for AI mode)
+- **Storage**: ~10GB for all models and dependencies
+- **Loading time**: ~30-60 seconds for initial model loading
+
 ## 📸 Example Outputs
+
+### 🖥️ Main Interface
+**Modern web-based interface with intuitive controls and real-time generation**
+
+![Main Interface](docs/main-ui.png)
 
 ### 📖 Storyboard Generation
 **"A detective walks into a neon-lit alley at midnight, rain pouring down"** *(Cinematic style)*
