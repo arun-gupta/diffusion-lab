@@ -251,7 +251,6 @@ class StoryboardGenerator {
             safeClassAction('captionsCard', 'add', 'd-none');
             document.getElementById('singleImageContainer').classList.remove('d-none');
             document.getElementById('storyboardContainer').classList.add('d-none');
-            document.getElementById('img2imgSection').style.display = 'block';
         } else if (genType === 'img2img') {
             const captionsCard = document.getElementById('captionsCard');
             safeClassAction('captionsCard', 'add', 'd-none');
