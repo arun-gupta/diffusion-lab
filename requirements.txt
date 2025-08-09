@@ -10,5 +10,5 @@ numpy>=1.24.0
 matplotlib>=3.7.0
 reportlab>=4.0.0
 scipy>=1.10.0
-controlnet-aux>=0.3.0
+controlnet-aux>=0.0.10
 opencv-python>=4.8.0 

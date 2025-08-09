@@ -17,5 +17,5 @@ fi
 echo "Activating virtual environment..."
 source venv/bin/activate
 
-echo "Starting the application..."
-python app.py 
+echo "Starting the web application..."
+python3 -m diffusionlab.api.webapp 

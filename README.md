@@ -7,8 +7,30 @@ Create professional AI art and storyboards instantly from text prompts. Python w
 
 ## 🚀 Quick Start
 
+### Option 1: Automated Setup (Recommended)
 ```bash
-# Clone and setup
+# Clone repository
+git clone https://github.com/arun-gupta/diffusion-lab.git
+cd diffusion-lab
+
+# One-command setup and run
+./run_webapp.sh
+# Open http://localhost:5001 in your browser
+```
+
+### Option 2: Fresh Install
+```bash
+# Complete clean setup (removes old environment)
+./cleanup_and_reinstall.sh
+
+# Then run the web app
+python3 -m diffusionlab.api.webapp
+# Open http://localhost:5001 in your browser
+```
+
+### Option 3: Manual Setup
+```bash
+# Clone and setup manually
 git clone https://github.com/arun-gupta/diffusion-lab.git
 cd diffusion-lab
 python -m venv venv
@@ -225,6 +247,20 @@ For detailed usage instructions, see the [Usage Guide](USAGE_GUIDE.md).
 - **Storage**: SSD with sufficient space for AI models (~10GB)
 
 ### Setup
+
+#### Automated Setup (Recommended)
+```bash
+# Clone repository
+git clone https://github.com/arun-gupta/diffusion-lab.git
+cd diffusion-lab
+
+# Use automated setup scripts
+./run_webapp.sh              # One-command setup and run
+# OR
+./cleanup_and_reinstall.sh   # Fresh install (removes old environment)
+```
+
+#### Manual Setup
 ```bash
 # Clone repository
 git clone https://github.com/arun-gupta/diffusion-lab.git
@@ -240,6 +276,12 @@ pip install -r requirements.txt
 # Run web application
 python3 -m diffusionlab.api.webapp
 ```
+
+#### Available Automation Scripts
+- **`run_webapp.sh`**: One-command setup and web app launch
+- **`cleanup_and_reinstall.sh`**: Complete fresh installation
+- **`setup.py`**: Cross-platform Python setup script
+- **`run.sh`**: Quick launcher with automatic setup detection
 
 ### Alternative Interfaces
 ```bash

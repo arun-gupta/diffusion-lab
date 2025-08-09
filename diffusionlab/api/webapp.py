@@ -544,9 +544,13 @@ def generate_storyboard():
         if mode == 'ai':
             print("[DEBUG] Entering Full AI mode.")
             try:
-                from diffusionlab.tasks.storyboard import generate_scene_variations, generate_caption, pipe, inpaint_pipe, STYLE_PRESETS, IMAGE_CONFIG, load_models, generate_with_controlnet
+                from diffusionlab.tasks import storyboard
+                from diffusionlab.tasks.storyboard import generate_scene_variations, generate_caption, STYLE_PRESETS, IMAGE_CONFIG, load_models, generate_with_controlnet
                 # Load models if not already loaded
                 load_models()
+                # Access pipe and inpaint_pipe after loading
+                pipe = storyboard.pipe
+                inpaint_pipe = storyboard.inpaint_pipe
             except ImportError as e:
                 print(f"[DEBUG] ImportError in AI mode: {e}")
                 return jsonify({'error': 'AI mode is not available. Please ensure diffusionlab/tasks/storyboard.py and dependencies are present.'}), 500
