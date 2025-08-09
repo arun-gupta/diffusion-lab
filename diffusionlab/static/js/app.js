@@ -23,6 +23,7 @@ class StoryboardGenerator {
         this.updateStatusMessage(); // Initialize status message
         this.updateModeIndicator(); // Initialize mode indicator on load
         this.updateExamplePromptVisibility(); // Initialize example prompt visibility on load
+        this.updateModeUI(); // Initialize mode-specific UI sections on load
     }
 
     bindEvents() {
@@ -225,6 +226,7 @@ class StoryboardGenerator {
     updateModeUI() {
         const mode = this.getCurrentMode();
         const genType = document.getElementById('generationMode').value;
+        console.log('[DEBUG] updateModeUI called, genType:', genType);
         
         // Hide all sections first
         document.getElementById('img2imgSection').style.display = 'none';
@@ -261,6 +263,7 @@ class StoryboardGenerator {
                 document.getElementById('inpaintingCanvasContainer').style.display = 'none';
             }
         } else if (genType === 'batch') {
+            console.log('[DEBUG] Showing batch section');
             document.getElementById('captionsCard').classList.add('d-none');
             document.getElementById('singleImageContainer').classList.add('d-none');
             document.getElementById('storyboardContainer').classList.remove('d-none');
