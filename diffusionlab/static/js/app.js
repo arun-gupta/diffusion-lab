@@ -43,6 +43,7 @@ class StoryboardGenerator {
 
         // Mode selector
         document.getElementById('generationMode').addEventListener('change', () => {
+            console.log('[DEBUG] Generation mode changed');
             this.updateModeUI();
         });
 
@@ -226,6 +227,16 @@ class StoryboardGenerator {
     updateModeUI() {
         const mode = this.getCurrentMode();
         const genType = document.getElementById('generationMode').value;
+        console.log('[DEBUG] updateModeUI called, genType:', genType);
+        
+        // Helper function to safely add/remove classes
+        const safeClassAction = (elementId, action, className) => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                if (action === 'add') element.classList.add(className);
+                else if (action === 'remove') element.classList.remove(className);
+            }
+        };
         
         // Hide all sections first
         document.getElementById('img2imgSection').style.display = 'none';
@@ -236,12 +247,14 @@ class StoryboardGenerator {
         document.getElementById('mainPromptSection').style.display = 'block';
         
         if (genType === 'single') {
-            document.getElementById('captionsCard').classList.add('d-none');
+            const captionsCard = document.getElementById('captionsCard');
+            safeClassAction('captionsCard', 'add', 'd-none');
             document.getElementById('singleImageContainer').classList.remove('d-none');
             document.getElementById('storyboardContainer').classList.add('d-none');
             document.getElementById('img2imgSection').style.display = 'block';
         } else if (genType === 'img2img') {
-            document.getElementById('captionsCard').classList.add('d-none');
+            const captionsCard = document.getElementById('captionsCard');
+            safeClassAction('captionsCard', 'add', 'd-none');
             document.getElementById('singleImageContainer').classList.remove('d-none');
             document.getElementById('storyboardContainer').classList.add('d-none');
             document.getElementById('img2imgSection').style.display = 'block';
@@ -251,7 +264,8 @@ class StoryboardGenerator {
                 document.getElementById('imagePreview').style.display = 'none';
             }
         } else if (genType === 'inpainting') {
-            document.getElementById('captionsCard').classList.add('d-none');
+            const captionsCard = document.getElementById('captionsCard');
+            safeClassAction('captionsCard', 'add', 'd-none');
             document.getElementById('singleImageContainer').classList.remove('d-none');
             document.getElementById('storyboardContainer').classList.add('d-none');
             document.getElementById('inpaintingSection').style.display = 'block';
@@ -262,7 +276,9 @@ class StoryboardGenerator {
                 document.getElementById('inpaintingCanvasContainer').style.display = 'none';
             }
         } else if (genType === 'batch') {
-            document.getElementById('captionsCard').classList.add('d-none');
+            console.log('[DEBUG] Showing batch section');
+            const captionsCard = document.getElementById('captionsCard');
+            safeClassAction('captionsCard', 'add', 'd-none');
             document.getElementById('singleImageContainer').classList.add('d-none');
             document.getElementById('storyboardContainer').classList.remove('d-none');
             document.getElementById('batchSection').style.display = 'block';
@@ -270,7 +286,8 @@ class StoryboardGenerator {
             this.removeUploadedImage();
             this.removeInpaintingImage();
         } else if (genType === 'controlnet') {
-            document.getElementById('captionsCard').classList.add('d-none');
+            const captionsCard = document.getElementById('captionsCard');
+            safeClassAction('captionsCard', 'add', 'd-none');
             document.getElementById('singleImageContainer').classList.remove('d-none');
             document.getElementById('storyboardContainer').classList.add('d-none');
             document.getElementById('controlnetSection').style.display = 'block';
@@ -278,7 +295,8 @@ class StoryboardGenerator {
             this.removeUploadedImage();
             this.removeInpaintingImage();
         } else if (genType === 'prompt-chaining') {
-            document.getElementById('captionsCard').classList.add('d-none');
+            const captionsCard = document.getElementById('captionsCard');
+            safeClassAction('captionsCard', 'add', 'd-none');
             document.getElementById('singleImageContainer').classList.add('d-none');
             document.getElementById('storyboardContainer').classList.remove('d-none');
             document.getElementById('promptChainingSection').style.display = 'block';
@@ -288,7 +306,8 @@ class StoryboardGenerator {
             this.removeInpaintingImage();
         } else {
             // Storyboard mode
-            document.getElementById('captionsCard').classList.add('d-none');
+            const captionsCard = document.getElementById('captionsCard');
+            safeClassAction('captionsCard', 'add', 'd-none');
             document.getElementById('singleImageContainer').classList.add('d-none');
             document.getElementById('storyboardContainer').classList.remove('d-none');
             // Clear any uploaded images when switching to storyboard mode
@@ -735,7 +754,7 @@ class StoryboardGenerator {
                 `;
                 captionsContainer.innerHTML += captionHtml;
             });
-            captionsCard.classList.remove('d-none');
+            if (captionsCard) captionsCard.classList.remove('d-none');
         }
 
         // Scroll to storyboard
