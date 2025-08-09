@@ -1531,12 +1531,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (listGroup) {
         listGroup.addEventListener('click', function(e) {
             if (e.target.classList.contains('example-prompt')) {
+                console.log('[DEBUG] Example prompt clicked:', e.target.dataset.prompt);
+                
+                // Prevent any default behavior
+                e.preventDefault();
+                e.stopPropagation();
+                
                 // Check if the tab is disabled
                 const tab = e.target.closest('.tab-pane');
                 if (tab) {
                     const tabId = tab.id;
                     const tabButton = document.querySelector(`[data-bs-target="#${tabId}"]`);
                     if (tabButton && tabButton.classList.contains('disabled')) {
+                        console.log('[DEBUG] Tab disabled, ignoring click');
                         return; // Don't process click if tab is disabled
                     }
                 }
@@ -1545,6 +1552,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('prompt').value = prompt;
                 window.storyboardApp.updateStatus('Example prompt loaded', 'info');
                 document.getElementById('prompt').focus();
+                console.log('[DEBUG] Prompt set, should NOT trigger generation');
             }
         });
     }
