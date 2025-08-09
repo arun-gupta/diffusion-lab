@@ -614,32 +614,32 @@ def generate_storyboard():
                             num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
                             guidance_scale=IMAGE_CONFIG["guidance_scale"]
                         ).images[0]
-                elif img2img_mode and input_image_path:
-                    print(f"[DEBUG] AI Image-to-Image mode with strength={strength}")
-                    # Load the input image
-                    input_image = Image.open(input_image_path).convert('RGB')
-                    input_image = resize_image(input_image)
-                    
-                    # Use the inpainting pipeline for img2img by creating a full mask
-                    # This gives us proper img2img functionality
-                    width, height = IMAGE_CONFIG["width"], IMAGE_CONFIG["height"]
-                    
-                    # Create a full mask (all white = inpaint everything)
-                    mask = Image.new('L', (width, height), 255)
-                    
-                    # Use the inpainting pipeline for img2img
-                    # Use fewer inference steps to avoid index out of bounds error
-                    num_steps = min(20, INPAINTING_CONFIG["num_inference_steps"])
-                    image = inpaint_pipe(
-                        prompt=scene,
-                        image=input_image,
-                        mask_image=mask,
-                        negative_prompt=negative_prompt,
-                        num_inference_steps=num_steps,
-                        guidance_scale=INPAINTING_CONFIG["guidance_scale"],
-                        strength=strength  # This controls how much to change
-                    ).images[0]
-                elif gen_type == 'prompt-chaining' and prompt_chain_data:
+            elif img2img_mode and input_image_path:
+                print(f"[DEBUG] AI Image-to-Image mode with strength={strength}")
+                # Load the input image
+                input_image = Image.open(input_image_path).convert('RGB')
+                input_image = resize_image(input_image)
+                
+                # Use the inpainting pipeline for img2img by creating a full mask
+                # This gives us proper img2img functionality
+                width, height = IMAGE_CONFIG["width"], IMAGE_CONFIG["height"]
+                
+                # Create a full mask (all white = inpaint everything)
+                mask = Image.new('L', (width, height), 255)
+                
+                # Use the inpainting pipeline for img2img
+                # Use fewer inference steps to avoid index out of bounds error
+                num_steps = min(20, INPAINTING_CONFIG["num_inference_steps"])
+                image = inpaint_pipe(
+                    prompt=scene,
+                    image=input_image,
+                    mask_image=mask,
+                    negative_prompt=negative_prompt,
+                    num_inference_steps=num_steps,
+                    guidance_scale=INPAINTING_CONFIG["guidance_scale"],
+                    strength=strength  # This controls how much to change
+                ).images[0]
+            elif gen_type == 'prompt-chaining' and prompt_chain_data:
                     print(f"[DEBUG] AI Prompt Chaining mode")
                     # Generate a sequence of images for prompt chaining
                     prompts = prompt_chain_data.get('prompts', [])
