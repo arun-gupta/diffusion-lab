@@ -696,117 +696,107 @@ def generate_storyboard():
                         'evolutionStrength': evolution_strength,
                         'layout': layout
                     })
-                elif gen_type == 'batch' and batch_data:
-                    print(f"[DEBUG] AI Batch Generation mode")
-                    # Generate multiple variations of the same prompt
-                    batch_count = batch_data.get('count', BATCH_CONFIG["default_variations"])
-                    batch_layout = batch_data.get('layout', BATCH_CONFIG["default_layout"])
-                    variation_strength = batch_data.get('variationStrength', 0.5)
+            elif gen_type == 'batch' and batch_data:
+                print(f"[DEBUG] AI Batch Generation mode")
+                # Generate multiple variations of the same prompt
+                batch_count = batch_data.get('count', BATCH_CONFIG["default_variations"])
+                batch_layout = batch_data.get('layout', BATCH_CONFIG["default_layout"])
+                variation_strength = batch_data.get('variationStrength', 0.5)
+                
+                # Validate batch count
+                max_variations = BATCH_CONFIG["max_variations"]
+                batch_count = min(max(batch_count, BATCH_CONFIG["min_variations"]), max_variations)
+                
+                print(f"[DEBUG] Generating {batch_count} variations with layout={batch_layout}, variation_strength={variation_strength}")
+                
+                images = []
+                captions = []
+                style_preset = STYLE_PRESETS.get(style, STYLE_PRESETS["cinematic"])
+                negative_prompt = style_preset["negative_prompt"]
+                
+                # Add style suffix to the prompt
+                full_prompt = f"{scene}, {style_preset['prompt_suffix']}"
+                
+                for i in range(batch_count):
+                    print(f"[DEBUG] Generating batch variation {i+1}/{batch_count}")
                     
-                    # Validate batch count
-                    max_variations = BATCH_CONFIG["max_variations_demo"] if mode == 'demo' else BATCH_CONFIG["max_variations"]
-                    batch_count = min(max(batch_count, BATCH_CONFIG["min_variations"]), max_variations)
+                    # Vary the guidance scale and inference steps for diversity
+                    guidance_variation = IMAGE_CONFIG["guidance_scale"] + (variation_strength - 0.5) * 2
+                    step_variation = max(20, IMAGE_CONFIG["num_inference_steps"] + int((variation_strength - 0.5) * 10))
                     
-                    print(f"[DEBUG] Generating {batch_count} variations with layout={batch_layout}, variation_strength={variation_strength}")
+                    image = pipe(
+                        full_prompt,
+                        negative_prompt=negative_prompt,
+                        num_inference_steps=step_variation,
+                        guidance_scale=guidance_variation,
+                        width=IMAGE_CONFIG["width"],
+                        height=IMAGE_CONFIG["height"]
+                    ).images[0]
                     
-                    images = []
-                    captions = []
-                    style_preset = STYLE_PRESETS.get(style, STYLE_PRESETS["cinematic"])
-                    negative_prompt = style_preset["negative_prompt"]
+                    caption = f"Variation {i+1}: {scene[:50]}..."
+                    images.append(image)
+                    captions.append(caption)
+                
+                # Create batch layout (outside the for loop)
+                storyboard = create_storyboard_layout(images, captions, batch_layout)
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"batch_{timestamp}.png"
+                filepath = os.path.join(get_storyboards_dir(), filename)
+                storyboard.save(filepath)
+                buffer = io.BytesIO()
+                storyboard.save(buffer, format='PNG')
+                buffer.seek(0)
+                img_base64 = base64.b64encode(buffer.getvalue()).decode()
+                return jsonify({
+                    'success': True,
+                    'image': img_base64,
+                    'filename': filename,
+                    'captions': captions,
+                    'prompt': prompt,
+                    'style': style,
+                    'mode': mode,
+                    'batch': True,
+                    'batchCount': batch_count,
+                    'layout': batch_layout,
+                    'variationStrength': variation_strength
+                })
+            elif gen_type == 'controlnet' and controlnet_image_path and controlnet_data:
+                print(f"[DEBUG] AI ControlNet mode")
+                # Load the control image - construct proper path
+                control_image_full_path = os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(controlnet_image_path))
+                print(f"[DEBUG] Loading control image from: {control_image_full_path}")
+                control_image = Image.open(control_image_full_path).convert('RGB')
+                control_image = resize_image(control_image)
+                
+                # Get ControlNet parameters
+                control_model = controlnet_data.get('model', 'canny')
+                control_strength = controlnet_data.get('controlStrength', 1.0)
+                guidance_start = controlnet_data.get('guidanceStart', 0.0)
+                guidance_end = controlnet_data.get('guidanceEnd', 1.0)
+                
+                print(f"[DEBUG] ControlNet parameters: model={control_model}, strength={control_strength}, guidance_start={guidance_start}, guidance_end={guidance_end}")
+                
+                try:
+                    # Use the proper ControlNet implementation
+                    from diffusionlab.tasks.storyboard import generate_with_controlnet
                     
-                    # Add style suffix to the prompt
-                    full_prompt = f"{scene}, {style_preset['prompt_suffix']}"
-                    
-                    for i in range(batch_count):
-                        print(f"[DEBUG] Generating batch variation {i+1}/{batch_count}")
-                        
-                        # Vary the guidance scale and inference steps for diversity
-                        guidance_variation = IMAGE_CONFIG["guidance_scale"] + (variation_strength - 0.5) * 2
-                        step_variation = max(20, IMAGE_CONFIG["num_inference_steps"] + int((variation_strength - 0.5) * 10))
-                        
-                        image = pipe(
-                            full_prompt,
-                            negative_prompt=negative_prompt,
-                            num_inference_steps=step_variation,
-                            guidance_scale=guidance_variation,
-                            width=IMAGE_CONFIG["width"],
-                            height=IMAGE_CONFIG["height"]
-                        ).images[0]
-                        
-                        caption = f"Variation {i+1}: {scene[:50]}..."
-                        images.append(image)
-                        captions.append(caption)
-                    
-                    # Create batch layout
-                    storyboard = create_storyboard_layout(images, captions, batch_layout)
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    filename = f"batch_{timestamp}.png"
-                    filepath = os.path.join(get_storyboards_dir(), filename)
-                    storyboard.save(filepath)
-                    buffer = io.BytesIO()
-                    storyboard.save(buffer, format='PNG')
-                    buffer.seek(0)
-                    img_base64 = base64.b64encode(buffer.getvalue()).decode()
-                    return jsonify({
-                        'success': True,
-                        'image': img_base64,
-                        'filename': filename,
-                        'captions': captions,
-                        'prompt': prompt,
-                        'style': style,
-                        'mode': mode,
-                        'batch': True,
-                        'batchCount': batch_count,
-                        'layout': batch_layout,
-                        'variationStrength': variation_strength
-                    })
-                elif gen_type == 'controlnet' and controlnet_image_path and controlnet_data:
-                    print(f"[DEBUG] AI ControlNet mode")
-                    # Load the control image - construct proper path
-                    control_image_full_path = os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(controlnet_image_path))
-                    print(f"[DEBUG] Loading control image from: {control_image_full_path}")
-                    control_image = Image.open(control_image_full_path).convert('RGB')
-                    control_image = resize_image(control_image)
-                    
-                    # Get ControlNet parameters
-                    control_model = controlnet_data.get('model', 'canny')
-                    control_strength = controlnet_data.get('controlStrength', 1.0)
-                    guidance_start = controlnet_data.get('guidanceStart', 0.0)
-                    guidance_end = controlnet_data.get('guidanceEnd', 1.0)
-                    
-                    print(f"[DEBUG] ControlNet parameters: model={control_model}, strength={control_strength}, guidance_start={guidance_start}, guidance_end={guidance_end}")
-                    
-                    try:
-                        # Use the proper ControlNet implementation
-                        from diffusionlab.tasks.storyboard import generate_with_controlnet
-                        
-                        image = generate_with_controlnet(
-                            prompt=scene,
-                            control_image=control_image,
-                            control_type=control_model,
-                            control_strength=control_strength,
-                            guidance_start=guidance_start,
-                            guidance_end=guidance_end,
-                            negative_prompt=negative_prompt,
-                            num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
-                            guidance_scale=IMAGE_CONFIG["guidance_scale"],
-                            width=IMAGE_CONFIG["width"],
-                            height=IMAGE_CONFIG["height"]
-                        )
-                        print(f"[DEBUG] ControlNet generation completed successfully")
-                    except Exception as e:
-                        print(f"[DEBUG] ControlNet generation failed: {e}")
-                        # Fallback to regular generation
-                        image = pipe(
-                            scene,
-                            negative_prompt=negative_prompt,
-                            num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
-                            guidance_scale=IMAGE_CONFIG["guidance_scale"],
-                            width=IMAGE_CONFIG["width"],
-                            height=IMAGE_CONFIG["height"]
-                        ).images[0]
-                else:
-                    # Generate image using text-to-image
+                    image = generate_with_controlnet(
+                        prompt=scene,
+                        control_image=control_image,
+                        control_type=control_model,
+                        control_strength=control_strength,
+                        guidance_start=guidance_start,
+                        guidance_end=guidance_end,
+                        negative_prompt=negative_prompt,
+                        num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
+                        guidance_scale=IMAGE_CONFIG["guidance_scale"],
+                        width=IMAGE_CONFIG["width"],
+                        height=IMAGE_CONFIG["height"]
+                    )
+                    print(f"[DEBUG] ControlNet generation completed successfully")
+                except Exception as e:
+                    print(f"[DEBUG] ControlNet generation failed: {e}")
+                    # Fallback to regular generation
                     image = pipe(
                         scene,
                         negative_prompt=negative_prompt,
@@ -815,6 +805,16 @@ def generate_storyboard():
                         width=IMAGE_CONFIG["width"],
                         height=IMAGE_CONFIG["height"]
                     ).images[0]
+            else:
+                # Generate image using text-to-image
+                image = pipe(
+                    scene,
+                    negative_prompt=negative_prompt,
+                    num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
+                    guidance_scale=IMAGE_CONFIG["guidance_scale"],
+                    width=IMAGE_CONFIG["width"],
+                    height=IMAGE_CONFIG["height"]
+                ).images[0]
                 
                 caption = generate_caption(scene)
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -837,44 +837,44 @@ def generate_storyboard():
                     'inpainting': inpainting_mode,
                     'controlnet': gen_type == 'controlnet'
                 })
-            else:
-                print("[DEBUG] AI Storyboard mode.")
-                scene_variations = generate_scene_variations(prompt, style)
-                images = []
-                captions = []
-                style_preset = STYLE_PRESETS.get(style, STYLE_PRESETS["cinematic"])
-                negative_prompt = style_preset["negative_prompt"]
-                for i, scene in enumerate(scene_variations):
-                    print(f"[DEBUG] Generating AI image {i+1}/5 for: {scene[:60]}")
-                    image = pipe(
-                        scene,
-                        negative_prompt=negative_prompt,
-                        num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
-                        guidance_scale=IMAGE_CONFIG["guidance_scale"],
-                        width=IMAGE_CONFIG["width"],
-                        height=IMAGE_CONFIG["height"]
-                    ).images[0]
-                    caption = generate_caption(scene)
-                    images.append(image)
-                    captions.append(caption)
-                storyboard = create_storyboard_layout(images, captions)
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"storyboard_{timestamp}.png"
-                filepath = os.path.join(get_storyboards_dir(), filename)
-                storyboard.save(filepath)
-                buffer = io.BytesIO()
-                storyboard.save(buffer, format='PNG')
-                buffer.seek(0)
-                img_base64 = base64.b64encode(buffer.getvalue()).decode()
-                return jsonify({
-                    'success': True,
-                    'image': img_base64,
-                    'filename': filename,
-                    'captions': captions,
-                    'prompt': prompt,
-                    'style': style,
-                    'mode': mode
-                })
+        else:
+            print("[DEBUG] AI Storyboard mode.")
+            scene_variations = generate_scene_variations(prompt, style)
+            images = []
+            captions = []
+            style_preset = STYLE_PRESETS.get(style, STYLE_PRESETS["cinematic"])
+            negative_prompt = style_preset["negative_prompt"]
+            for i, scene in enumerate(scene_variations):
+                print(f"[DEBUG] Generating AI image {i+1}/5 for: {scene[:60]}")
+                image = pipe(
+                    scene,
+                    negative_prompt=negative_prompt,
+                    num_inference_steps=IMAGE_CONFIG["num_inference_steps"],
+                    guidance_scale=IMAGE_CONFIG["guidance_scale"],
+                    width=IMAGE_CONFIG["width"],
+                    height=IMAGE_CONFIG["height"]
+                ).images[0]
+                caption = generate_caption(scene)
+                images.append(image)
+                captions.append(caption)
+            storyboard = create_storyboard_layout(images, captions)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"storyboard_{timestamp}.png"
+            filepath = os.path.join(get_storyboards_dir(), filename)
+            storyboard.save(filepath)
+            buffer = io.BytesIO()
+            storyboard.save(buffer, format='PNG')
+            buffer.seek(0)
+            img_base64 = base64.b64encode(buffer.getvalue()).decode()
+            return jsonify({
+                'success': True,
+                'image': img_base64,
+                'filename': filename,
+                'captions': captions,
+                'prompt': prompt,
+                'style': style,
+                'mode': mode
+            })
     except Exception as e:
         print(f"[DEBUG] Exception in /generate: {e}")
         return jsonify({'error': f'Error generating: {str(e)}'}), 500
