@@ -363,7 +363,7 @@ class StoryboardGenerator {
         const promptChainingExamples = document.getElementById('prompt-chaining-examples');
         
         // Reset all tabs and panes to default state
-        [storyboardTab, singleTab, batchTab, img2imgTab, inpaintingTab, promptChainingTab].forEach(tab => {
+        [storyboardTab, singleTab, batchTab, controlnetTab, img2imgTab, inpaintingTab, promptChainingTab].forEach(tab => {
             if (tab) {
                 tab.classList.remove('disabled');
                 tab.style.opacity = '1';
