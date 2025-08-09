@@ -19,7 +19,7 @@ class StoryboardGenerator {
     init() {
         this.bindEvents();
         this.updateStyleDescription();
-        this.updateModeLabel(); // Initialize mode label on load
+
         this.updateStatusMessage(); // Initialize status message
         this.updateModeIndicator(); // Initialize mode indicator on load
         this.updateExamplePromptVisibility(); // Initialize example prompt visibility on load
@@ -38,10 +38,7 @@ class StoryboardGenerator {
             this.updateStyleDescription();
         });
 
-        // Mode switch
-        document.getElementById('modeSwitch').addEventListener('change', (e) => {
-            this.updateModeLabel();
-        });
+
 
         // Mode selector
         document.getElementById('generationMode').addEventListener('change', () => {
@@ -232,18 +229,7 @@ class StoryboardGenerator {
         document.getElementById('styleDescription').textContent = description;
     }
 
-    updateModeLabel() {
-        const modeSwitch = document.getElementById('modeSwitch');
-        const modeLabel = document.getElementById('modeLabel');
-        const modeDescription = document.getElementById('modeDescription');
-        if (modeSwitch.checked) {
-            modeLabel.textContent = 'Full AI (Slower)';
-            modeDescription.textContent = 'Full AI mode uses Stable Diffusion and StableLM for real image and caption generation. This is much slower and requires more resources.';
-        } else {
-            modeLabel.textContent = 'Demo (Fast)';
-            modeDescription.textContent = 'Demo mode is fast and uses placeholder images. Switch to Full AI for real AI-generated art (slower).';
-        }
-    }
+
 
     updateModeUI() {
         const mode = this.getCurrentMode();
@@ -518,8 +504,8 @@ class StoryboardGenerator {
     }
 
     getCurrentMode() {
-        // Return 'ai' if switch is checked, else 'demo'
-        return document.getElementById('modeSwitch').checked ? 'ai' : 'demo';
+        // Always return 'ai' mode now that demo mode is removed
+        return 'ai';
     }
 
     async generateStoryboard() {

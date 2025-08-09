@@ -71,34 +71,7 @@ STYLES = {
     }
 }
 
-def create_demo_image(prompt, style, panel_num):
-    """Create a demo image with placeholder content"""
-    width, height = 512, 512
-    # Use a different color and icon for each panel
-    demo_colors = ['#2c3e50', '#e74c3c', '#27ae60', '#34495e', '#f39c12']
-    demo_icons = ['🎬', '🤖', '🧙', '🚀', '🎨']
-    bg_color = demo_colors[(panel_num - 1) % len(demo_colors)]
-    icon = demo_icons[(panel_num - 1) % len(demo_icons)]
-    image = Image.new('RGB', (width, height), color=bg_color)
-    draw = ImageDraw.Draw(image)
-    # Add border
-    draw.rectangle([10, 10, width-10, height-10], outline='white', width=3)
-    # Add icon
-    try:
-        font_icon = ImageFont.truetype("/System/Library/Fonts/AppleColorEmoji.ttc", 80)
-    except:
-        font_icon = ImageFont.load_default()
-    draw.text((width//2, 120), icon, fill='white', anchor='mm', font=font_icon)
-    # Add panel number
-    draw.text((width//2, 50), f"Panel {panel_num}", fill='white', anchor='mm')
-    # Add style name
-    draw.text((width//2, height//2), STYLES[style]['name'], fill='white', anchor='mm')
-    # Add prompt preview
-    prompt_preview = prompt[:40] + "..." if len(prompt) > 40 else prompt
-    draw.text((width//2, height//2 + 50), prompt_preview, fill='white', anchor='mm')
-    # Add demo indicator
-    draw.text((width//2, height - 50), "Demo Mode", fill='yellow', anchor='mm')
-    return image
+
 
 def create_storyboard_layout(images, captions, layout="horizontal"):
     """Create a flexible layout of images with captions"""
@@ -385,21 +358,7 @@ def process_mask_data(mask_data_url):
         print(f"[DEBUG] Error processing mask data: {e}")
         return None
 
-def generate_demo_storyboard(prompt, style):
-    """Generate a demo storyboard with placeholder images"""
-    images = []
-    captions = []
-    
-    # Generate 5 demo images
-    for i in range(5):
-        # Create demo image
-        image = create_demo_image(prompt, style, i + 1)
-        
-        # Create demo caption
-        caption = f"Demo panel {i+1}: {prompt[:30]}..."
-        
-        images.append(image)
-        captions.append(caption)
+
     
     # Create storyboard layout
     storyboard = create_storyboard_layout(images, captions)
@@ -541,27 +500,27 @@ def generate_storyboard():
                 print("[DEBUG] No ControlNet reference image provided.")
                 return jsonify({'error': 'Please upload a reference image for ControlNet'}), 400
             
-        if mode == 'ai':
-            print("[DEBUG] Entering Full AI mode.")
-            try:
-                from diffusionlab.tasks import storyboard
-                from diffusionlab.tasks.storyboard import generate_scene_variations, generate_caption, STYLE_PRESETS, IMAGE_CONFIG, load_models, generate_with_controlnet
-                # Load models if not already loaded
-                load_models()
-                # Access pipe and inpaint_pipe after loading
-                pipe = storyboard.pipe
-                inpaint_pipe = storyboard.inpaint_pipe
-            except ImportError as e:
-                print(f"[DEBUG] ImportError in AI mode: {e}")
-                return jsonify({'error': 'AI mode is not available. Please ensure diffusionlab/tasks/storyboard.py and dependencies are present.'}), 500
-            if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting' or gen_type == 'prompt-chaining' or gen_type == 'batch' or gen_type == 'controlnet':
-                print(f"[DEBUG] AI {'ControlNet' if gen_type == 'controlnet' else 'Batch Generation' if gen_type == 'batch' else 'Prompt Chaining' if gen_type == 'prompt-chaining' else 'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
-                # Generate a single AI image
-                scene = prompt
-                style_preset = STYLE_PRESETS.get(style, STYLE_PRESETS["cinematic"])
-                negative_prompt = style_preset["negative_prompt"]
-                
-                if inpainting_mode and inpainting_image_path and mask_data:
+        print("[DEBUG] Entering AI generation mode.")
+        try:
+            from diffusionlab.tasks import storyboard
+            from diffusionlab.tasks.storyboard import generate_scene_variations, generate_caption, STYLE_PRESETS, IMAGE_CONFIG, load_models, generate_with_controlnet
+            # Load models if not already loaded
+            load_models()
+            # Access pipe and inpaint_pipe after loading
+            pipe = storyboard.pipe
+            inpaint_pipe = storyboard.inpaint_pipe
+        except ImportError as e:
+            print(f"[DEBUG] ImportError in AI mode: {e}")
+            return jsonify({'error': 'AI mode is not available. Please ensure diffusionlab/tasks/storyboard.py and dependencies are present.'}), 500
+        
+        if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting' or gen_type == 'prompt-chaining' or gen_type == 'batch' or gen_type == 'controlnet':
+            print(f"[DEBUG] AI {'ControlNet' if gen_type == 'controlnet' else 'Batch Generation' if gen_type == 'batch' else 'Prompt Chaining' if gen_type == 'prompt-chaining' else 'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
+            # Generate a single AI image
+            scene = prompt
+            style_preset = STYLE_PRESETS.get(style, STYLE_PRESETS["cinematic"])
+            negative_prompt = style_preset["negative_prompt"]
+            
+            if inpainting_mode and inpainting_image_path and mask_data:
                     print(f"[DEBUG] AI Inpainting mode")
                     print(f"[DEBUG] inpaint_pipe available: {inpaint_pipe is not None}")
                     
@@ -916,233 +875,6 @@ def generate_storyboard():
                     'style': style,
                     'mode': mode
                 })
-        else:
-            print("[DEBUG] Entering Demo mode.")
-            if gen_type == 'single' or gen_type == 'img2img' or gen_type == 'inpainting' or gen_type == 'prompt-chaining' or gen_type == 'batch' or gen_type == 'controlnet':
-                print(f"[DEBUG] Demo {'ControlNet' if gen_type == 'controlnet' else 'Batch Generation' if gen_type == 'batch' else 'Prompt Chaining' if gen_type == 'prompt-chaining' else 'Inpainting' if gen_type == 'inpainting' else 'Image-to-Image' if gen_type == 'img2img' else 'Single-Image Art'} mode.")
-                if inpainting_mode and inpainting_image_path and mask_data:
-                    print(f"[DEBUG] Demo Inpainting mode")
-                    # Load the input image and create a demo inpainting
-                    input_image = Image.open(inpainting_image_path).convert('RGB')
-                    input_image = resize_image(input_image)
-                    
-                    # Create a demo inpainting by overlaying text
-                    demo_image = input_image.copy()
-                    draw = ImageDraw.Draw(demo_image)
-                    try:
-                        font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 24)
-                    except:
-                        font = ImageFont.load_default()
-                    
-                    # Add inpainting indicator
-                    draw.text((10, 10), "Demo Inpainting", fill='yellow', font=font)
-                    draw.text((10, 40), f"Prompt: {prompt[:30]}...", fill='white', font=font)
-                    draw.text((10, 70), "Style: " + STYLES[style]['name'], fill='white', font=font)
-                    draw.text((10, 100), "Masked areas will be filled", fill='red', font=font)
-                    
-                    image = demo_image
-                elif img2img_mode and input_image_path:
-                    print(f"[DEBUG] Demo Image-to-Image mode with strength={strength}")
-                    # Load the input image and create a demo transformation
-                    input_image = Image.open(input_image_path).convert('RGB')
-                    input_image = resize_image(input_image)
-                    
-                    # Create a demo transformation by overlaying text
-                    demo_image = input_image.copy()
-                    draw = ImageDraw.Draw(demo_image)
-                    try:
-                        font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 24)
-                    except:
-                        font = ImageFont.load_default()
-                    
-                    # Add transformation indicator
-                    draw.text((10, 10), f"Demo Img2Img (Strength: {strength})", fill='yellow', font=font)
-                    draw.text((10, 40), f"Prompt: {prompt[:30]}...", fill='white', font=font)
-                    draw.text((10, 70), "Style: " + STYLES[style]['name'], fill='white', font=font)
-                    
-                    image = demo_image
-                elif gen_type == 'prompt-chaining' and prompt_chain_data:
-                    print(f"[DEBUG] Demo Prompt Chaining mode")
-                    # Create demo prompt chaining storyboard
-                    prompts = prompt_chain_data.get('prompts', [])
-                    evolution_strength = prompt_chain_data.get('evolutionStrength', 0.3)
-                    layout = prompt_chain_data.get('layout', 'horizontal')
-                    
-                    if len(prompts) < 2:
-                        return jsonify({'error': 'At least 2 prompts required for prompt chaining'}), 400
-                    
-                    print(f"[DEBUG] Creating demo prompt chain with {len(prompts)} steps")
-                    images = []
-                    captions = []
-                    
-                    for i, chain_prompt in enumerate(prompts):
-                        # Create demo image for each prompt
-                        demo_image = create_demo_image(chain_prompt, style, i + 1)
-                        
-                        # Add prompt chaining indicator
-                        draw = ImageDraw.Draw(demo_image)
-                        try:
-                            font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 20)
-                        except:
-                            font = ImageFont.load_default()
-                        
-                        draw.text((10, 10), f"Demo Prompt Chain - Step {i+1}", fill='yellow', font=font)
-                        draw.text((10, 35), f"Evolution Strength: {evolution_strength}", fill='cyan', font=font)
-                        draw.text((10, 60), f"Layout: {layout}", fill='cyan', font=font)
-                        
-                        images.append(demo_image)
-                        captions.append(f"Step {i+1}: {chain_prompt[:50]}...")
-                    
-                    # Create storyboard layout for the prompt chain
-                    storyboard = create_storyboard_layout(images, captions)
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    filename = f"demo_prompt_chain_{timestamp}.png"
-                    filepath = os.path.join(get_storyboards_dir(), filename)
-                    storyboard.save(filepath)
-                    buffer = io.BytesIO()
-                    storyboard.save(buffer, format='PNG')
-                    buffer.seek(0)
-                    img_base64 = base64.b64encode(buffer.getvalue()).decode()
-                    return jsonify({
-                        'success': True,
-                        'image': img_base64,
-                        'filename': filename,
-                        'captions': captions,
-                        'prompt': prompt or "Story Evolution",  # Use default if main prompt is empty
-                        'style': style,
-                        'mode': mode,
-                        'promptChain': True,
-                        'evolutionStrength': evolution_strength,
-                        'layout': layout
-                    })
-                elif gen_type == 'batch' and batch_data:
-                    print(f"[DEBUG] Demo Batch Generation mode")
-                    # Create demo batch generation storyboard
-                    batch_count = batch_data.get('count', BATCH_CONFIG["default_variations"])
-                    batch_layout = batch_data.get('layout', BATCH_CONFIG["default_layout"])
-                    variation_strength = batch_data.get('variationStrength', 0.5)
-                    
-                    # Validate batch count
-                    max_variations = BATCH_CONFIG["max_variations_demo"] if mode == 'demo' else BATCH_CONFIG["max_variations"]
-                    batch_count = min(max(batch_count, BATCH_CONFIG["min_variations"]), max_variations)
-                    
-                    print(f"[DEBUG] Creating demo batch with {batch_count} variations")
-                    images = []
-                    captions = []
-                    
-                    for i in range(batch_count):
-                        # Create demo image for each variation
-                        demo_image = create_demo_image(prompt, style, i + 1)
-                        
-                        # Add batch generation indicator
-                        draw = ImageDraw.Draw(demo_image)
-                        try:
-                            font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 20)
-                        except:
-                            font = ImageFont.load_default()
-                        
-                        draw.text((10, 10), f"Demo Batch - Variation {i+1}", fill='yellow', font=font)
-                        draw.text((10, 35), f"Variation Strength: {variation_strength}", fill='cyan', font=font)
-                        draw.text((10, 60), f"Layout: {batch_layout}", fill='cyan', font=font)
-                        
-                        images.append(demo_image)
-                        captions.append(f"Variation {i+1}: {prompt[:50]}...")
-                    
-                    # Create storyboard layout for the batch
-                    storyboard = create_storyboard_layout(images, captions, batch_layout)
-                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                    filename = f"demo_batch_{timestamp}.png"
-                    filepath = os.path.join(get_storyboards_dir(), filename)
-                    storyboard.save(filepath)
-                    buffer = io.BytesIO()
-                    storyboard.save(buffer, format='PNG')
-                    buffer.seek(0)
-                    img_base64 = base64.b64encode(buffer.getvalue()).decode()
-                    return jsonify({
-                        'success': True,
-                        'image': img_base64,
-                        'filename': filename,
-                        'captions': captions,
-                        'prompt': prompt,
-                        'style': style,
-                        'mode': mode,
-                        'batch': True,
-                        'batchCount': batch_count,
-                        'layout': batch_layout,
-                        'variationStrength': variation_strength
-                    })
-                elif gen_type == 'controlnet' and controlnet_image_path and controlnet_data:
-                    print(f"[DEBUG] Demo ControlNet mode")
-                    # Load the control image and create a demo ControlNet effect
-                    control_image = Image.open(controlnet_image_path).convert('RGB')
-                    control_image = resize_image(control_image)
-                    
-                    # Get ControlNet parameters
-                    control_model = controlnet_data.get('model', 'canny')
-                    control_strength = controlnet_data.get('controlStrength', 1.0)
-                    guidance_start = controlnet_data.get('guidanceStart', 0.0)
-                    guidance_end = controlnet_data.get('guidanceEnd', 1.0)
-                    
-                    # Create a demo ControlNet image by overlaying text on the control image
-                    demo_image = control_image.copy()
-                    draw = ImageDraw.Draw(demo_image)
-                    try:
-                        font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 24)
-                    except:
-                        font = ImageFont.load_default()
-                    
-                    # Add ControlNet indicator
-                    draw.text((10, 10), "Demo ControlNet", fill='yellow', font=font)
-                    draw.text((10, 40), f"Model: {control_model}", fill='cyan', font=font)
-                    draw.text((10, 70), f"Control Strength: {control_strength}", fill='cyan', font=font)
-                    draw.text((10, 100), f"Guidance: {guidance_start}-{guidance_end}", fill='cyan', font=font)
-                    draw.text((10, 130), f"Prompt: {prompt[:30]}...", fill='white', font=font)
-                    
-                    image = demo_image
-                else:
-                    image = create_demo_image(prompt, style, 1)
-                
-                caption = f"Art: {prompt[:30]}..."
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"single_art_{timestamp}.png"
-                filepath = os.path.join(get_storyboards_dir(), filename)
-                image.save(filepath)
-                buffer = io.BytesIO()
-                image.save(buffer, format='PNG')
-                buffer.seek(0)
-                img_base64 = base64.b64encode(buffer.getvalue()).decode()
-                return jsonify({
-                    'success': True,
-                    'image': img_base64,
-                    'filename': filename,
-                    'caption': caption,
-                    'prompt': prompt,
-                    'style': style,
-                    'mode': mode,
-                    'img2img': img2img_mode,
-                    'inpainting': inpainting_mode,
-                    'controlnet': gen_type == 'controlnet'
-                })
-            else:
-                print("[DEBUG] Demo Storyboard mode.")
-                storyboard, captions = generate_demo_storyboard(prompt, style)
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"storyboard_{timestamp}.png"
-                filepath = os.path.join(get_storyboards_dir(), filename)
-                storyboard.save(filepath)
-                buffer = io.BytesIO()
-                storyboard.save(buffer, format='PNG')
-                buffer.seek(0)
-                img_base64 = base64.b64encode(buffer.getvalue()).decode()
-                return jsonify({
-                    'success': True,
-                    'image': img_base64,
-                    'filename': filename,
-                    'captions': captions,
-                    'prompt': prompt,
-                    'style': style,
-                    'mode': mode
-                })
     except Exception as e:
         print(f"[DEBUG] Exception in /generate: {e}")
         return jsonify({'error': f'Error generating: {str(e)}'}), 500
@@ -1296,7 +1028,7 @@ def test_inpainting():
 if __name__ == '__main__':
     print("🎬 Starting Storyboard Generator Web App...")
     print("🌐 Open your browser to: http://localhost:5001")
-    print("📝 This is a demo version - AI models not loaded")
-    print("🔧 For full AI generation, run: python app.py")
+    print("🚀 AI-powered diffusion models ready for generation")
+    print("✨ Ready to create amazing AI-generated art and storyboards!")
     
     app.run(debug=True, host='0.0.0.0', port=5001) 

@@ -32,8 +32,8 @@ source venv/bin/activate
 
 echo "Starting Flask web application..."
 echo "🌐 Opening browser to: http://localhost:5001"
-echo "📝 This is a demo version - AI models not loaded"
-echo "🔧 For full AI generation, run: python app.py"
+echo "🚀 AI-powered diffusion models ready for generation"
+echo "✨ Ready to create amazing AI-generated art and storyboards!"
 echo
 echo "Press Ctrl+C to stop the server"
 echo
