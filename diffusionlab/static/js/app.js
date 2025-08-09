@@ -45,16 +45,7 @@ class StoryboardGenerator {
             this.updateModeUI();
         });
 
-        // Example prompts
-        document.querySelectorAll('.example-prompt').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const prompt = e.target.dataset.prompt;
-                document.getElementById('prompt').value = prompt;
-                this.updateStatus('Example prompt loaded', 'info');
-                // Optionally scroll to the form or focus the prompt field
-                document.getElementById('prompt').focus();
-            });
-        });
+        // Example prompts are handled by event delegation at the bottom of the file
 
         // Download button
         document.getElementById('downloadBtn').addEventListener('click', () => {
